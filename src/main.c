@@ -25,23 +25,24 @@ typedef struct {
 } Monitor;
 
 void help() {
-    printf("Usage: [options] images_path\n"							"\n"
-        "Options:"										"\n"
-        "-h, --help \t Output this help list and exit"						"\n"
-	"-t, --time \t Set the time XAWP needs to wait between the change of images: --time seconds.milliseconds\n"
-	"-v, --version \t Output version information and license and exit"			"\n"
-	"-D, --debug \t Output the debug log"							"\n"
-	"\nNote that XAWP uses a lot of resources like RAM and CPU!\n"				"\n"
+    printf("Usage: [options] images_path\n"						"\n"
+        "Options:"									"\n"
+        "-h, --help \t Output this help list and exit"					"\n"
+	"-t, --time \t Set the time XAWP needs to wait between the"			"\n"
+	"\t\t change of images: --time seconds.milliseconds"				"\n"
+	"-v, --version \t Output version information and license and exit"		"\n"
+	"-D, --debug \t Output the debug log"						"\n"
+	"\nNote that XAWP uses a lot of resources like RAM and CPU!\n"			"\n"
 	);
 }
 
 void version() {
 	printf("XAMP version ");printf(ver);
-	printf(											"\n"
-	"Copyright (C) 2022 TheRealOne78"							"\n"
-	"License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>."	"\n"
-	"This is free software: you are free to change and redistribute it."			"\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n"				"\n"
+	printf(										"\n"
+	"Copyright (C) 2022 TheRealOne78"						"\n"
+	"License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>. \n"
+	"This is free software: you are free to change and redistribute it."		"\n"
+	"There is NO WARRANTY, to the extent permitted by law.\n"			"\n"
 	);
 }
 
