@@ -1,4 +1,4 @@
-//#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 199309L
 
 #include <Imlib2.h>
 #include <X11/Xatom.h>
@@ -6,9 +6,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 #include <getopt.h>
 
+bool DEBUG = false;
 const char author[] = "TheRealOne78";
 const char authorMail[] = "bajcsielias78@gmail.com";
 const char ver[] = "1.0";
@@ -27,7 +29,8 @@ void help() {
         "Options:"										"\n"
         "-h, --help \t Output this help list and exit"						"\n"
 	"-t, --time \t Set the time XAWP needs to wait between the change of images: --time seconds.milliseconds\n"
-	"-v, --version \t Output version information and exit\n"				"\n"
+	"-v, --version \t Output version information and license and exit"			"\n"
+	"\nNote that XAWP uses a lot of resources like RAM and CPU!\n"				"\n"
 	);
 }
 
@@ -77,47 +80,46 @@ void setRootAtoms(Display *display, Monitor *monitor) {
                   PropModeReplace, (unsigned char *)&monitor->pixmap, 1);
 }
 
-
-void setTime(int argc; char **argv[]){
-//TODO: make a filter that gives the options from agruments and get the time option in order to process it
-	for(int tempCycleVar=1; tempCycleVar <= argc-2; tempCycleVar++)
-	{
-		if(argv[tempCycleVar] == "-t" || argv[tempCycleVar] == "--time"){
-		timeArg = argv[tempCycleVar+1];
-		break;
-		}
-	}
-}
-
 int main(int argc, char **argv[]) {
+	int noimgArgs = 1;
 	if (argc<=1)
 	{
 		help();
 		exit(1);
 	}
  
+	char configTime[6];
+	configTime[0] = '\0';
+
 	static struct option long_options [] = {
-	{ "help",	optional_argument,NULL,	'h' },
-	{ "time",	no_argument,	NULL,	't' },
+	{ "help",	no_argument,	NULL,	'h' },
+	{ "time",	required_argument,NULL,	't' },
 	{ "version",	no_argument,	NULL,	'v' },
+	{ "debug",	optional_argument,NULL,	'D' },
 	{ NULL,		0,		NULL,	0   }
 	};
-int indexptr;
-	while(1){
-		int c = getopt_long(argc, argv, "htv", long_options, NULL);
 
+	while(1){
+		int c = getopt_long(argc, argv, "ht:vD", long_options, NULL);
+		/* Detect the end of the options. */
         	if (c == -1)
 		break;
 
 		switch (c)
         	{
+			case 'D':
+				DEBUG=true;
+				noimgArgs=noimgArgs+1;
+				break;
+
 			case 'h':
 				help();
 				exit(0);
 				break;
 
 			case 't':
-				setTime(argv);
+				snprintf(configTime, sizeof(configTime), "%s", optarg);
+				noimgArgs=noimgArgs + 2;
 				break;
 
 			case 'v':
@@ -129,22 +131,27 @@ int indexptr;
 				/* No need to print and error message because getopt_long did that already. */
 				exit(1);
 				break;
+
+			default:
+				abort();
         	}
 	}
 
-#ifdef DEBUG
-  fprintf(stdout, "Loading images");
-#endif
+	float time = atof(configTime);
 
-	Imlib_Image images[argc-1];
-	for (int imgCount=0; imgCount <= argc-2; imgCount++){
-		images[imgCount] = imlib_load_image(argv[imgCount+1]);
+if (DEBUG==true)
+  fprintf(stdout, "Loading images");
+
+	Imlib_Image images[argc-noimgArgs];
+	for (int imgCount=0; imgCount <= argc-noimgArgs-1; imgCount++){
+		images[imgCount] = imlib_load_image(argv[imgCount+noimgArgs]);
 	}
 	int images_count = argc-1;
+	//printf(argv[0]);printf(argv[1]);printf(argv[2]);printf(argv[3]);
+	//exit(1);
 
-#ifdef DEBUG
+if(DEBUG==true)
   fprintf(stdout, "Loading monitors\n");
-#endif
 
   Display *display = XOpenDisplay(NULL);
   if (!display) {
@@ -153,16 +160,14 @@ int indexptr;
   }
 
   const int screen_count = ScreenCount(display);
-#ifdef DEBUG
+if(DEBUG==true)
   fprintf(stdout, "Found %d screens\n", screen_count);
-#endif
 
   Monitor *monitors = malloc(sizeof(Monitor) * screen_count);
   for (int current_screen = 0; current_screen < screen_count;
        ++current_screen) {
-#ifdef DEBUG
+if(DEBUG==true)
     fprintf(stdout, "Running screen %d\n", current_screen);
-#endif
 
     const int width = DisplayWidth(display, current_screen);
     const int height = DisplayHeight(display, current_screen);
@@ -170,11 +175,10 @@ int indexptr;
     Visual *vis = DefaultVisual(display, current_screen);
     const int cm = DefaultColormap(display, current_screen);
 
-#ifdef DEBUG
+if(DEBUG==true){
     fprintf(stdout, "Screen %d: width: %d, height: %d, depth: %d\n",
             current_screen, width, height, depth);
-#endif
-
+}
     Window root = RootWindow(display, current_screen);
     Pixmap pixmap = XCreatePixmap(display, root, width, height, depth);
 
@@ -192,13 +196,11 @@ int indexptr;
     imlib_context_pop();
   }
 
-#ifdef DEBUG
+if(DEBUG==true)
   fprintf(stdout, "Loaded %d screens\n", screen_count);
-#endif
 
-#ifdef DEBUG
+if(DEBUG==true)
   fprintf(stdout, "Starting render loop");
-#endif
 
   struct timespec timeout;
   timeout.tv_sec = 0;
