@@ -25,11 +25,12 @@ typedef struct {
 } Monitor;
 
 void help() {
-    printf("Usage: [options] images_path"							"\n"
+    printf("Usage: [options] images_path\n"							"\n"
         "Options:"										"\n"
         "-h, --help \t Output this help list and exit"						"\n"
 	"-t, --time \t Set the time XAWP needs to wait between the change of images: --time seconds.milliseconds\n"
 	"-v, --version \t Output version information and license and exit"			"\n"
+	"-D, --debug \t Output the debug log"							"\n"
 	"\nNote that XAWP uses a lot of resources like RAM and CPU!\n"				"\n"
 	);
 }
@@ -108,7 +109,7 @@ int main(int argc, char **argv[]) {
 		switch (c)
         	{
 			case 'D':
-				DEBUG=true;
+				DEBUG=!DEBUG;
 				noimgArgs=noimgArgs+1;
 				break;
 
@@ -147,8 +148,6 @@ if (DEBUG==true)
 		images[imgCount] = imlib_load_image(argv[imgCount+noimgArgs]);
 	}
 	int images_count = argc-1;
-	//printf(argv[0]);printf(argv[1]);printf(argv[2]);printf(argv[3]);
-	//exit(1);
 
 if(DEBUG==true)
   fprintf(stdout, "Loading monitors\n");
