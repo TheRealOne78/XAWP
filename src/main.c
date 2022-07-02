@@ -13,7 +13,7 @@
 bool DEBUG = false;
 const char author[] = "TheRealOne78";
 const char authorMail[] = "bajcsielias78@gmail.com";
-const char ver[] = "1.0";
+const char ver[] = "0.1";
 
 float timeArg;
 
