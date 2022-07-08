@@ -15,10 +15,10 @@ Unlike AlecsFerra's animated_wallpaper.c, XAWP can be installed more easily ~~an
 TODO:
 
 - [x] Add arguments
-- [] Add configuration file
-- [] Add fit
-- [] Automate ImageMagick picture converting from gif to other formats with user prompt
-- [] Documentation and populate this README.md file
+- [ ] Add configuration file
+- [ ] Add fit
+- [ ] Automate ImageMagick picture converting from gif to other formats with user prompt
+- [ ] Documentation and populate this README.md file
 
 Quick note!
 In present, the code is not functional giving segmentation fault immediately after opening it. As there is no release yet, please use the stable branch https://github.com/TheRealOne78/XAWP/tree/stable. To compile use `make`, to install use `make install` as root and to use XAWP, append to the command the absolute directory + wildcard(\*) eg: `/home/foo/aniwall/*. It won't work with pictures that are not in order. Also make sure there isn't any other file in that directory.
