@@ -1,4 +1,4 @@
-LDFLAGS = -lX11 -lImlib2
+LDFLAGS = -lX11 -lImlib2 -lconfig
 CC = gcc
 CFLAGS = -O2
 SRC = src/main.c
