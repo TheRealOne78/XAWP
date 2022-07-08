@@ -28,7 +28,6 @@ double timeArg;
 char fitConf[];    /* TODO: Fit not   */
 char fitArg[];     /* implemented yet */ /* Remove fit comments after it is fully implemented */
 
-
 typedef struct {
   Window root;
   Pixmap pixmap;
