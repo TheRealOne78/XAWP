@@ -1,4 +1,6 @@
-# XAWP - X11 Animated Wallpaper Player 
+<img src="https://i.imgur.com/DxCHBP5.png" width="50%">
+
+# X11 Animated Wallpaper Player 
 X11 Animated Wallpaper Player - An X11 animated wallpaper player made to be easily configurable, be fast and work in compositors
 
 XAWP is based on AlecsFerra's animated_wallpaper.c <a href="https://gist.github.com/AlecsFerra/ef1cc008990319f3b676eb2d8aa89903">github gist</a>.
