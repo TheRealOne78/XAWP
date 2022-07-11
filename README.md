@@ -25,4 +25,17 @@ TODO:
 - [ ] Documentation and populate this README.md file
 
 Quick note!
-In present, the code is not functional giving segmentation fault immediately after opening it. As there is no release yet, please use the stable branch https://github.com/TheRealOne78/XAWP/tree/stable. To compile use `make`, to install use `make install` as root and to use XAWP, append to the command the absolute directory + wildcard(\*) eg: `/home/foo/aniwall/*. It won't work with pictures that are not in order. Also make sure there isn't any other file in that directory.
+In present, the code is not functional (it doesn't give segmentation fault, config should be 80% implemented but imlib loading images is not implemented at all in this commit). As there is no release yet, please use the stable branch https://github.com/TheRealOne78/XAWP/tree/stable.
+
+<br><br>To compile use `make`, to install use `make install` as root and to use XAWP, append to the command the absolute directory + wildcard(\*) eg: `/home/foo/aniwall/*`.
+<br>It won't work with pictures that are not in order, so always be sure all the frames have all the digits. You won't have to correct the frame generation numbering scheme after auto-ImageMagick generator will be integrated.
+<br>Example:
+```
+pic001.png  pic002.png  pic003.png ...
+pic010.png  pic011.png  pic012.png ...
+    .           .           .
+    .           .           .
+    .           .           .
+pic100.png  pic101.png  pic100.png ...
+```
+<br>Also make sure there isn't any other file in that directory.

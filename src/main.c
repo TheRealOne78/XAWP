@@ -13,20 +13,26 @@
 #include <dirent.h>
 #include <string.h>
 
+//Basic constants
 const char author[] = "TheRealOne78";
 const char authorMail[] = "bajcsielias78@gmail.com";
 const char ver[] = "0.1";
 
+const unsigned int maxPathLenght = 4096;
 const char appendConfPath[] = "/.config/xawp/xawp.conf"; // The path that will be concatenated with HOME envar
 
 // Basic config/arguments
-bool DEBUG = false;
-char *pathConf[];
-char *pathArg[];
+bool DEBUG = true;
+char pathConf[4096];
+char pathArg[4096];
 double timeConf;
 double timeArg;
 char fitConf[];    /* TODO: Fit not   */
 char fitArg[];     /* implemented yet */ /* Remove fit comments after it is fully implemented */
+
+// Misc
+bool hasCurrentDir = false;
+bool hasParentDir = false;
 
 typedef struct {
   Window root;
@@ -61,43 +67,58 @@ void version() {
 	);
 }
 
-int imgCount;
-char getImgPath(char *requestPath[]) {
+static int compare_fun (const void *p, const void *q) {
+  /* compare_fun() and some code from getImgPath() from
+   * https://www.linuxquestions.org/questions/programming-9/how-to-list-and-sort-files-in-some-directory-by-the-names-on-linux-win-in-c-4175555160/
+   * by NevemTeve - Thank you NevemTeve              */
+  const char *l = p;
+  const char *r = q;
+  int cmp;
+
+  cmp = strcmp(l, r);
+  return cmp;
+}
+
+char getImgPath(char *str, int *imgCount) {
   DIR *d;
   struct dirent *dir;
+  int i = 0;
 
-  // Check to see how many images are inside the directory to know how to define result[]
-  d = opendir(&requestPath);
-  imgCount = 0;
+  printf("string: %s\n", str);
+  /* Check to see how many images are inside the directory to
+   * know how to define result[]                           */
+  d = opendir(str);
   if (d)
   {
      while ((dir = readdir(d)) != NULL)
      {
-       imgCount++;
+       (*imgCount)++;
      }
      closedir(d);
   }
-  imgCount = imgCount - 2;
 
   // Now alocate result[] and put the file names inside result[]
-  d = opendir(&requestPath);
-  int i = 0;
-  /* alocate k to skip the first 2 . and .. files */
-  int k = 0;
-  char result[imgCount];
-
+  d = opendir(str);
+  char path[*imgCount][maxPathLenght];
   if (d)
   {
-    while ((dir = readdir(d)) != NULL)
-      {
-        if (k == 2)
-         result[i] = dir->d_name;
-	else
-         k++;
-      }
-        closedir(d);
+    while ((dir = readdir(d)) != NULL) {
+      strcpy(path[i], dir->d_name);
+      i++;
+    }
+    closedir(d);
   }
-  return(result);
+    //readdir() dumps mixed files, so will order with qsort()
+    qsort(path, *imgCount, sizeof path[0], compare_fun);
+
+    /* Now check if there are any "." and ".." files in path
+     * in order to know where the actual images start     */
+    if(path[0] == ".")
+      hasCurrentDir = true;
+    if(path[1] == "..")
+      hasParentDir = true;
+
+  return &path;
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {
@@ -146,9 +167,9 @@ int main(int argc, char **argv[]) {
   config_init(&cfg);
 
   // Read the file. If there is an error, report it and exit.
-  char confPath[4096]; strcpy(confPath, getenv("HOME")); strcat(confPath, appendConfPath);
+  char confPath[maxPathLenght]; strcpy(confPath, getenv("HOME")); strcat(confPath, appendConfPath);
   if(DEBUG == true)
-    printf("xawp.conf path: %s", confPath);
+    printf("DEBUG: xawp.conf path: %s\n", confPath);
   if(! config_read_file(&cfg, confPath)) {
     fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
            config_error_line(&cfg), config_error_text(&cfg));
@@ -156,9 +177,17 @@ int main(int argc, char **argv[]) {
     return(EXIT_FAILURE);
   }
 
-  char *path[4999];
+  int imgCount = 0;
+  char ***path;
   if(config_lookup_string(&cfg, "path", &str)) {
-    strcpy(path, getImgPath(str));
+    strcpy(pathConf, str);
+    path = getImgPath(&pathConf, &imgCount);
+    if(DEBUG == true){
+      printf("DEBUG: imgCount: %d\n"
+             "DEBUG: str <Config Path>: %s\n"
+	     "DEBUG: pathConf: %s\n",
+	     imgCount, str, pathConf);
+    }
   }
   else {
     fprintf(stderr, "No 'path' setting in configuration file.\n");
@@ -166,6 +195,8 @@ int main(int argc, char **argv[]) {
   
   if(config_lookup_float(&cfg, "time", &flt)) {
     timeConf = flt;
+    if(DEBUG == true)
+      printf("DEBUG: timeConf: %f\n", timeConf);
   }
   else {
     fprintf(stderr, "No 'time' setting in configuration file.\n");
@@ -193,9 +224,9 @@ int main(int argc, char **argv[]) {
   	{ "time",    required_argument, NULL,	't' },
   	{ "version", no_argument,	NULL,	'v' },
   	{ "debug",   no_argument,       NULL,	'D' },
-//	{ "fit",     required_argument, NULL,   'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
-//	{ "image",   required_argument, NULL,   'i' }, // Not implemented yet - This will make the user prompt photos after the --image/-i option
-//	{ "config",  required_argument, NULL,   'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
+	{ "fit",     required_argument, NULL,   'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
+	{ "image",   required_argument, NULL,   'i' }, // Not implemented yet - This will make the user prompt photos after the --image/-i option
+	{ "config",  required_argument, NULL,   'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
   	{ NULL,	     0,		        NULL,	0   }
   	};
 
@@ -251,7 +282,7 @@ int main(int argc, char **argv[]) {
   }
   
   if(DEBUG==true)
-    fprintf(stdout, "Loading images");
+    fprintf(stdout, "DEBUG: Loading images");
   
   Imlib_Image images[imgCount];
   /* -- Old Imlib_Image loading, please delete this after the new implementation --
@@ -263,7 +294,7 @@ int main(int argc, char **argv[]) {
   int images_count = argc-1; */
 
   if(DEBUG==true)
-    fprintf(stdout, "Loading monitors\n");
+    fprintf(stdout, " DEBUG: Loading monitors\n");
 
   Display *display = XOpenDisplay(NULL);
   if (!display) {
@@ -273,13 +304,13 @@ int main(int argc, char **argv[]) {
 
   const int screen_count = ScreenCount(display);
   if(DEBUG==true)
-    fprintf(stdout, "Found %d screens\n", screen_count);
+    fprintf(stdout, "DEBUG: Found %d screens\n", screen_count);
 
   Monitor *monitors = malloc(sizeof(Monitor) * screen_count);
   for (int current_screen = 0; current_screen < screen_count;
        ++current_screen) {
   if(DEBUG==true)
-    fprintf(stdout, "Running screen %d\n", current_screen);
+    fprintf(stdout, "DEBUG: Running screen %d\n", current_screen);
 
     const int width = DisplayWidth(display, current_screen);
     const int height = DisplayHeight(display, current_screen);
@@ -288,7 +319,7 @@ int main(int argc, char **argv[]) {
     const int cm = DefaultColormap(display, current_screen);
 
   if(DEBUG==true){
-    fprintf(stdout, "Screen %d: width: %d, height: %d, depth: %d\n",
+    fprintf(stdout, "DEBUG: Screen %d: width: %d, height: %d, depth: %d\n",
             current_screen, width, height, depth);
   }
     Window root = RootWindow(display, current_screen);
@@ -308,10 +339,10 @@ int main(int argc, char **argv[]) {
     imlib_context_pop();
   }
   if(DEBUG==true)
-    fprintf(stdout, "Loaded %d screens\n", screen_count);
+    fprintf(stdout, "DEBUG: Loaded %d screens\n", screen_count);
 
   if(DEBUG==true)
-    fprintf(stdout, "Starting render loop");
+    fprintf(stdout, "DEBUG: Starting render loop");
 
   struct timespec timeout;
   timeout.tv_sec = 0;
