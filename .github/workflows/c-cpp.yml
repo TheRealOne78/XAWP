@@ -13,5 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: install dependencies
+      run: apt install libimlib2 libx11 libconfig
     - name: make
       run: make
