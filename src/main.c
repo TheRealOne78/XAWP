@@ -13,7 +13,7 @@
 #include <dirent.h>
 #include <string.h>
 
-//Basic constants
+// Basic constants
 const char author[] = "TheRealOne78";
 const char authorMail[] = "bajcsielias78@gmail.com";
 const char ver[] = "0.1";
@@ -31,6 +31,7 @@ char fitConf[];    /* TODO: Fit not   */
 char fitArg[];     /* implemented yet */ /* Remove fit comments after it is fully implemented */
 
 // Misc
+int imgCount = 0;
 bool hasCurrentDir = false;
 bool hasParentDir = false;
 
@@ -42,7 +43,8 @@ typedef struct {
 } Monitor;
 
 void help() {
- printf("XAWP - X11 Animated Wallpaper Player"                                          "\n"
+ printf(                                                                                "\n"
+        "XAWP - X11 Animated Wallpaper Player"                                          "\n"
         "Play animated wallpapers in X11 by passing XAWP a directory containing the"    "\n"
 	"pictures frames wanted to be displayed."                                       "\n"
 	                                                                                "\n"
@@ -67,6 +69,25 @@ void version() {
 	);
 }
 
+void getImgCount(char *str) {
+  imgCount = 0;
+  DIR *d;
+  struct dirent *dir;
+  int i = 0;
+
+  /* Check to see how many images are inside the directory to
+   * know how to define path[]                             */
+  d = opendir(str);
+  if (d)
+  {
+     while ((dir = readdir(d)) != NULL)
+     {
+       imgCount++;
+     }
+     closedir(d);
+  }
+}
+
 static int compare_fun (const void *p, const void *q) {
   /* compare_fun() and some code from getImgPath() from
    * https://www.linuxquestions.org/questions/programming-9/how-to-list-and-sort-files-in-some-directory-by-the-names-on-linux-win-in-c-4175555160/
@@ -79,46 +100,30 @@ static int compare_fun (const void *p, const void *q) {
   return cmp;
 }
 
-char getImgPath(char *str, int *imgCount) {
+void getImgPath(char *str, char **path) {
   DIR *d;
   struct dirent *dir;
   int i = 0;
 
-  printf("string: %s\n", str);
-  /* Check to see how many images are inside the directory to
-   * know how to define result[]                           */
-  d = opendir(str);
-  if (d)
-  {
-     while ((dir = readdir(d)) != NULL)
-     {
-       (*imgCount)++;
-     }
-     closedir(d);
-  }
-
   // Now alocate result[] and put the file names inside result[]
   d = opendir(str);
-  char path[*imgCount][maxPathLenght];
   if (d)
   {
     while ((dir = readdir(d)) != NULL) {
-      strcpy(path[i], dir->d_name);
+      strcpy(*path[i], dir->d_name);
       i++;
     }
     closedir(d);
   }
     //readdir() dumps mixed files, so will order with qsort()
-    qsort(path, *imgCount, sizeof path[0], compare_fun);
+    qsort(path, imgCount, sizeof path[0], compare_fun);
 
     /* Now check if there are any "." and ".." files in path
      * in order to know where the actual images start     */
-    if(path[0] == ".")
+    if(*path[0] == ".")
       hasCurrentDir = true;
-    if(path[1] == "..")
+    if(*path[1] == "..")
       hasParentDir = true;
-
-  return &path;
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {
@@ -177,21 +182,16 @@ int main(int argc, char **argv[]) {
     return(EXIT_FAILURE);
   }
 
-  int imgCount = 0;
-  char ***path;
   if(config_lookup_string(&cfg, "path", &str)) {
     strcpy(pathConf, str);
-    path = getImgPath(&pathConf, &imgCount);
-    if(DEBUG == true){
-      printf("DEBUG: imgCount: %d\n"
-             "DEBUG: str <Config Path>: %s\n"
-	     "DEBUG: pathConf: %s\n",
-	     imgCount, str, pathConf);
-    }
   }
   else {
     fprintf(stderr, "No 'path' setting in configuration file.\n");
   }
+  getImgCount(&pathConf);
+  char path[imgCount][maxPathLenght];
+  getImgPath(&pathConf, &path);
+
   
   if(config_lookup_float(&cfg, "time", &flt)) {
     timeConf = flt;
@@ -206,12 +206,12 @@ int main(int argc, char **argv[]) {
     DEBUG = bln;
   }
   else {
-  fprintf(stderr, "No 'debug' setting in configuration file.\n");
+    fprintf(stderr, "No 'debug' setting in configuration file.\n");
   }
   config_destroy(&cfg);
 
   int noimgArgs = 1;
-  if (argc<=1 && path == NULL){
+  if (argc<=1 && path == NULL) {
     help();
     exit(1);
   }
@@ -225,21 +225,20 @@ int main(int argc, char **argv[]) {
   	{ "version", no_argument,	NULL,	'v' },
   	{ "debug",   no_argument,       NULL,	'D' },
 	{ "fit",     required_argument, NULL,   'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
-	{ "image",   required_argument, NULL,   'i' }, // Not implemented yet - This will make the user prompt photos after the --image/-i option
+	{ "directory",required_argument,NULL,   'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
 	{ "config",  required_argument, NULL,   'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
   	{ NULL,	     0,		        NULL,	0   }
   	};
 
   while(1){
-    int c = getopt_long(argc, argv, "ht:vDf:i:c:", long_options, NULL);
+    int c = getopt_long(argc, argv, "ht:vDf:d:c:", long_options, NULL);
     /* Detect the end of the options. */
-          	if (c == -1)
-    break;
+    if (c == -1)
+      break;
   
     switch (c){
       case 'D':
       	DEBUG=!DEBUG;
-      	noimgArgs=noimgArgs+1;
       	break;
   
       case 'h':
@@ -249,7 +248,6 @@ int main(int argc, char **argv[]) {
   
       case 't':
       	snprintf(configTime, sizeof(configTime), "%s", optarg);
-      	noimgArgs=noimgArgs + 2;
       	timeArg = atof(configTime);
         break;
 
@@ -257,13 +255,13 @@ int main(int argc, char **argv[]) {
 	//TODO: implement this
 	break;
 
-      case 'i':
+      case 'd':
 	//TODO: implement this
 	break;
 
       case 'c':
-        //TODO: implement this
-        break;
+	strcpy(pathArg, optarg);
+	break;
   
       case 'v':
       	version();
@@ -280,12 +278,27 @@ int main(int argc, char **argv[]) {
       	abort();
     }
   }
-  
+  if(pathArg != NULL) {
+  getImgCount(&pathArg);
+  char path[imgCount][maxPathLenght];
+  getImgPath(&pathArg, &path);
+  }
+
   if(DEBUG==true)
-    fprintf(stdout, "DEBUG: Loading images");
-  
-  Imlib_Image images[imgCount];
-  /* -- Old Imlib_Image loading, please delete this after the new implementation --
+    fprintf(stdout, "DEBUG: Loading images\n");
+
+  int fileOffset = 0;
+  if(hasCurrentDir == true)
+    fileOffset++;
+  if(hasParentDir == true)
+    fileOffset++;
+
+  Imlib_Image images[imgCount-fileOffset];
+  for(int i = 0; fileOffset + i < imgCount; i++){
+  //images[i] = *path[fileOffset+i];
+  printf("%s\n", path[fileOffset+i]);
+  }
+   /* -- Old Imlib_Image loading, please delete this after the new implementation --
   Imlib_Image images[argc-noimgArgs];
   
   for (int imgCount=0; imgCount <= argc-noimgArgs-1; imgCount++){
@@ -348,7 +361,7 @@ int main(int argc, char **argv[]) {
   timeout.tv_sec = 0;
   timeout.tv_nsec = 70000000;
 
-  while (1==1) {
+  while (1) {
     for (int cycle = 0; cycle < 10; ++cycle) {
       Imlib_Image current = images[cycle % imgCount];
       for (int monitor = 0; monitor < screen_count; ++monitor) {
