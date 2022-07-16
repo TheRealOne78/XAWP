@@ -34,6 +34,8 @@ char fitArg[];     /* implemented yet */ /* Remove fit comments after it is full
 int imgCount = 0;
 bool hasCurrentDir = false;
 bool hasParentDir = false;
+bool isConfConf = false;
+bool isArgConf = false;
 
 typedef struct {
   Window root;
@@ -122,8 +124,12 @@ void getImgPath(char *str, char **path) {
      * in order to know where the actual images start     */
     if(*path[0] == ".")
       hasCurrentDir = true;
+    else
+      hasCurrentDir = false;
     if(*path[1] == "..")
       hasParentDir = true;
+    else
+      hasParentDir = false;
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {
@@ -184,13 +190,14 @@ int main(int argc, char **argv[]) {
 
   if(config_lookup_string(&cfg, "path", &str)) {
     strcpy(pathConf, str);
+    getImgCount(&pathConf);
+    char confPath[imgCount][maxPathLenght];
+    getImgPath(&pathConf, &confPath);
+    isConfConf = true;
   }
   else {
     fprintf(stderr, "No 'path' setting in configuration file.\n");
   }
-  getImgCount(&pathConf);
-  char path[imgCount][maxPathLenght];
-  getImgPath(&pathConf, &path);
 
   
   if(config_lookup_float(&cfg, "time", &flt)) {
@@ -209,12 +216,6 @@ int main(int argc, char **argv[]) {
     fprintf(stderr, "No 'debug' setting in configuration file.\n");
   }
   config_destroy(&cfg);
-
-  int noimgArgs = 1;
-  if (argc<=1 && path == NULL) {
-    help();
-    exit(1);
-  }
 
   char configTime[6];
   configTime[0] = '\0';
@@ -235,17 +236,17 @@ int main(int argc, char **argv[]) {
     /* Detect the end of the options. */
     if (c == -1)
       break;
-  
+
     switch (c){
       case 'D':
       	DEBUG=!DEBUG;
       	break;
-  
+
       case 'h':
       	help();
       	exit(0);
       	break;
-  
+
       case 't':
       	snprintf(configTime, sizeof(configTime), "%s", optarg);
       	timeArg = atof(configTime);
@@ -261,31 +262,44 @@ int main(int argc, char **argv[]) {
 
       case 'c':
 	strcpy(pathArg, optarg);
-	break;
-  
+	isArgConf = true;
+    	break;
+
       case 'v':
       	version();
       	exit(0);
       	break;
-  
+ 
       case '?':
       	/* No need to print and error message because
       	   getopt_long did that already. */
       	exit(1);
       	break;
-  
+
       default:
       	abort();
     }
   }
-  if(pathArg != NULL) {
-  getImgCount(&pathArg);
-  char path[imgCount][maxPathLenght];
-  getImgPath(&pathArg, &path);
+  char **pArgPath;
+  if(isArgConf == true) {
+    getImgCount(&pathArg);
+    char argPath[imgCount][maxPathLenght];
+    getImgPath(&pathArg, &isConfConf == argPath);
+    pArgPath = &argPath;
   }
 
   if(DEBUG==true)
     fprintf(stdout, "DEBUG: Loading images\n");
+  char **path;
+  if(isArgConf == true)
+    path = *pArgPath;
+  else if(isConfConf == true)
+    path = &confPath;
+  else {
+    fprintf(stderr, "No valid path settings! Please check your configuration file and arguments.\n");
+    help();
+    exit(1);
+  }
 
   int fileOffset = 0;
   if(hasCurrentDir == true)
@@ -296,9 +310,9 @@ int main(int argc, char **argv[]) {
   Imlib_Image images[imgCount-fileOffset];
   for(int i = 0; fileOffset + i < imgCount; i++){
   //images[i] = *path[fileOffset+i];
-  printf("%s\n", path[fileOffset+i]);
+  //printf("%s\n", *path[fileOffset+i]);
   }
-   /* -- Old Imlib_Image loading, please delete this after the new implementation --
+  /* -- Old Imlib_Image loading, please delete this after the new implementation --
   Imlib_Image images[argc-noimgArgs];
   
   for (int imgCount=0; imgCount <= argc-noimgArgs-1; imgCount++){
