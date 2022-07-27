@@ -27,7 +27,11 @@ TODO:
 Quick note!
 In present, the code is not functional (it doesn't give segmentation fault, config should be 80% implemented but imlib loading images is not implemented at all in this commit). As there is no release yet, please use the stable branch https://github.com/TheRealOne78/XAWP/tree/stable.
 
-<br><br>To compile use `make`, to install use `make install` as root and to use XAWP, append to the command the absolute directory + wildcard(\*) eg: `/home/foo/aniwall/*`.
+<br><br>Installation:
+```
+chmod +x setup.sh
+./setup.sh
+```
 <br>It won't work with pictures that are not in order, so always be sure all the frames have all the digits. You won't have to correct the frame generation numbering scheme after auto-ImageMagick generator will be integrated.
 <br>Example:
 ```
