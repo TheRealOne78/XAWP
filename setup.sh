@@ -51,6 +51,6 @@ else if [ -x "$(command -v pkgin)" ]; then
 fi
 
 # Compile
-make -($nproc)
+make -$(nproc)
 printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
 exit 0
