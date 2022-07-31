@@ -2,7 +2,7 @@
 
 DEPENDENCIES="gcc make imlib2 libx11 libconfig"
 DEB_DEPENDENCIES="gcc make libimlib2-dev libx11-dev libconfig-dev"
-RPM_DEPENDENCIES="gcc make imlib2-devel libX11 libconfig"
+RPM_DEPENDENCIES="gcc make imlib2-devel libX11-devel libconfig-devel"
 BSD_DEPENDENCIES="gcc gmake imlib2 libx11 libconfig"
 # Check for root
 if [[ "$EUID" != 0 ]]; then
