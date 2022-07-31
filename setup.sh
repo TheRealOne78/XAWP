@@ -49,18 +49,23 @@ elif [ -x "$(command -v pkg_add)" ]; then
 elif [ -x "$(command -v pkgin)" ]; then
 	printf "pkg detected\nInstalling dependencies...\n"
 	pkgin -y install $DEPENDENCIES
-else 
-printf "Package manager not found! Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\"" to compile and install in your system!\n""
 
+else
+printf "Package manager not found! Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\"" to compile and install in your system!\n""
 fi
 
 # Compile
 if [ -x "$(command -v pkg)" ]; then
 	gmake -j$(nproc)
-else make -j$(nproc) fi
+
+else
+	make -j$(nproc)
+fi
+
 EXIT_CODE=$?
 if [[ $EXIT_CODE -eq 0 ]]; then
 	printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
+
 else
 	printf "Something went wrong!"
 	exit $EXIT_CODE
