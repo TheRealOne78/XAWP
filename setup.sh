@@ -1,8 +1,8 @@
 #!/bin/bash
 
-DEPENDENCIES="gcc make libimlib2 libx11 libconfig"
+DEPENDENCIES="gcc make imlib2 libx11 libconfig"
 DEB_DEPENDENCIES="gcc make libimlib2-dev libx11-dev libconfig-dev"
-
+BSD_DEPENDENCIES="gcc gmake imlib2 libx11 libconfig"
 # Check for root
 if [[ "$EUID" != 0 ]]; then
 	echo "Please run this script with super user permission!"
@@ -38,7 +38,7 @@ Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make i
 # FreeBSD
 elif [ -x "$(command -v pkg)" ]; then
 	printf "pkg detected\nInstalling dependencies...\n"
-	pkg install -y $DEPENDENCIES
+	pkg install -y $BSD_DEPENDENCIES
 
 # OpenBSD
 elif [ -x "$(command -v pkg_add)" ]; then
@@ -55,7 +55,9 @@ printf "Package manager not found! Please install $DEPENDENCIES manually and run
 fi
 
 # Compile
-make -j$(nproc)
+if [ -x "$(command -v pkg)" ]; then
+	gmake -j$(nproc)
+else make -j$(nproc) fi
 EXIT_CODE=$?
 if [[ $EXIT_CODE -eq 0 ]]; then
 	printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
