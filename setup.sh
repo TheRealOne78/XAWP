@@ -2,7 +2,7 @@
 
 DEPENDENCIES="gcc make imlib2 libx11 libconfig"
 DEB_DEPENDENCIES="gcc make libimlib2-dev libx11-dev libconfig-dev"
-RPM_DEPENDENCIES="gcc make imlib2 libX11 libconfig"
+RPM_DEPENDENCIES="gcc make imlib2-devel libX11 libconfig"
 BSD_DEPENDENCIES="gcc gmake imlib2 libx11 libconfig"
 # Check for root
 if [[ "$EUID" != 0 ]]; then
@@ -28,10 +28,10 @@ elif [ -x "$(command -v dnf)" ]; then
 	printf "dnf detected\nInstalling dependencies...\n"
 	dnf install -y $RPM_DEPENDENCIES
 
-# CentOS
-elif [ -x "$(command -v yum)" ]; then
-	printf "yum detected\nInstalling dependencies...\n"
-	yum install -y $RPM_DEPENDENCIES
+# CentOS - imlib2 lib/devel does not exist
+#elif [ -x "$(command -v yum)" ]; then
+# printf "yum detected\nInstalling dependencies...\n"
+#	yum install -y $RPM_DEPENDENCIES
 
 # Gentoo
 elif [ -x "$(command -v emerge)" ]; then
