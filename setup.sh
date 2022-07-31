@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 DEPENDENCIES="gcc make libimlib2 libx11 libconfig"
 DEB_DEPENDENCIES="gcc make libimlib2-dev libx11-dev libconfig-dev"
@@ -31,7 +31,7 @@ elif [ -x "$(command -v rpm)" ]; then
 elif [ -x "$(command -v emerge)" ]; then
 	printf "Gentoo distribution detected!\n\
 Automatic package instalation with portage may lead to package conflicts.\n\
-Please install $DEPENDENCIES by manually and run as root \"make -\$(nproc); make install\" to compile and install in your system!\n"
+Please install $DEPENDENCIES by manually and run as root \"make -j\$(nproc); make install\" to compile and install in your system!\n"
   exit 1
 
 ##BSD Family
@@ -52,6 +52,11 @@ elif [ -x "$(command -v pkgin)" ]; then
 fi
 
 # Compile
-make -$(nproc)
-printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
-exit 0
+make -j$(nproc)
+EXIT_CODE = $?
+if [[ $EXIT_CODE -eq 0 ]]
+	printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
+else
+	printf "Something went wrong!"
+	exit $EXIT_CODE
+fi
