@@ -1,14 +1,56 @@
-#!/bin/bash
+#!/bin/sh
 
-#Install Dependencies
+dependencies="libimlib2 libconfig"
+deb-dependencies="libimlib2-dev libconfig-dev"
 
+# Check for root
+if [[ "$EUID" != 0 ]]; then
+	echo "Please run this script with super user permission!"
+	exit 1
+fi
+    
+# Install Dependencies
+
+##Linux distributions
+# Debian
 if [ -x "$(command -v apt-get)" ]; then
-	printf "Apt detected\nInstalling dependencies\n"
-	sudo apt-get install -y libimlib2-dev install libconfig-dev
-else
-	printf "Apt NOT detected\nInstall libimlib2-dev libconfig-dev manually\n"
-	exit 1; fi
+	printf "apt-get detected\nInstalling dependencies...\n"
+	apt-get install -y $deb-dependencies
+	
+# Arch
+else if [ -x "$(command -v pacman)" ]; then
+	printf "apt-get detected\nInstalling dependencies...\n"
+	pacman -S $dependencies
 
-make
-printf "Installed!\n"
+# RHEL
+else if [ -x "$(command -v rpm)" ]; then
+	printf "apt-get detected\nInstalling dependencies...\n"
+	rpm -i $dependencies
+
+# Gentoo
+else if [ -x "$(command -v emerge)" ]; then
+	printf "Gentoo distribution detected!\n \
+	Automatic package instalation with portage may lead to package conflicts. Please install $dependencies by hand"
+
+##BSD Family
+# FreeBSD
+else if [ -x "$(command -v pkg)" ]; then
+	printf "pkg detected\nInstalling dependencies...\n"
+	pkg install -y $dependencies
+
+# OpenBSD
+else if [ -x "$(command -v pkg_add)" ]; then
+	printf "pkg detected\nInstalling dependencies...\n"
+	pkg_add $dependencies
+	
+# NetBSD
+else if [ -x "$(command -v pkgin)" ]; then
+	printf "pkg detected\nInstalling dependencies...\n"
+	pkgin -y install $dependencies
+	
+fi
+
+# Compile
+make -($nproc)
+printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
 exit 0
