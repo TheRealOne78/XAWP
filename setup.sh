@@ -31,7 +31,7 @@ elif [ -x "$(command -v rpm)" ]; then
 elif [ -x "$(command -v emerge)" ]; then
 	printf "Gentoo distribution detected!\n\
 Automatic package instalation with portage may lead to package conflicts.\n\
-Please install $DEPENDENCIES by manually and run as root \"make -j\$(nproc); make install\" to compile and install in your system!\n"
+Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\" to compile and install in your system!\n"
   exit 1
 
 ##BSD Family
@@ -49,6 +49,9 @@ elif [ -x "$(command -v pkg_add)" ]; then
 elif [ -x "$(command -v pkgin)" ]; then
 	printf "pkg detected\nInstalling dependencies...\n"
 	pkgin -y install $DEPENDENCIES
+else 
+printf "Package manager not found! Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\"" to compile and install in your system!\n""
+
 fi
 
 # Compile
