@@ -54,4 +54,4 @@ fi
 # Compile
 make -$(nproc)
 printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
-return 0
+exit 0
