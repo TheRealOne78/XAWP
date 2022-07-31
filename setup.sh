@@ -43,23 +43,30 @@ elif [ -x "$(command -v pkg)" ]; then
 # OpenBSD
 elif [ -x "$(command -v pkg_add)" ]; then
 	printf "pkg detected\nInstalling dependencies...\n"
-	pkg_add $DEPENDENCIES
+	pkg_add -U $BSD_DEPENDENCIES
 
 # NetBSD
 elif [ -x "$(command -v pkgin)" ]; then
 	printf "pkg detected\nInstalling dependencies...\n"
-	pkgin -y install $DEPENDENCIES
+	pkgin -y install $BSD_DEPENDENCIES
 
 else
 printf "Package manager not found! Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\"" to compile and install in your system!\n""
 fi
 
 # Compile
+# FreeBSD
 if [ -x "$(command -v pkg)" ]; then
 	gmake -j$(nproc)
-
+# OpenBSD
+elif [ -x "$(command -v pkg_add)" ]; then
+	gmake -j$(nproc)
+# NetBSD
+elif [ -x "$(command -v pkgin)" ]; then
+	gmake -j$(nproc)	
+# Linux distributions
 else
-	make -j$(nproc)
+make -j$(nproc)
 fi
 
 EXIT_CODE=$?
