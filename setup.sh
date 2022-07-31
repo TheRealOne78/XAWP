@@ -19,17 +19,17 @@ if [ -x "$(command -v apt-get)" ]; then
 
 # Arch
 elif [ -x "$(command -v pacman)" ]; then
-	printf "apt-get detected\nInstalling dependencies...\n"
+	printf "pacman detected\nInstalling dependencies...\n"
 	pacman -S --noconfirm $DEPENDENCIES
 
 # RHEL
 elif [ -x "$(command -v rpm)" ]; then
-	printf "apt-get detected\nInstalling dependencies...\n"
+	printf "rpm detected\nInstalling dependencies...\n"
 	rpm -i $DEPENDENCIES
 
 # Gentoo
 elif [ -x "$(command -v emerge)" ]; then
-	printf "Gentoo distribution detected!\n\
+	printf "portage detected!\n\
 Automatic package instalation with portage may lead to package conflicts.\n\
 Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\" to compile and install in your system!\n"
   exit 1
@@ -42,16 +42,16 @@ elif [ -x "$(command -v pkg)" ]; then
 
 # OpenBSD
 elif [ -x "$(command -v pkg_add)" ]; then
-	printf "pkg detected\nInstalling dependencies...\n"
+	printf "pkg_add detected\nInstalling dependencies...\n"
 	pkg_add -U $BSD_DEPENDENCIES
 
 # NetBSD
 elif [ -x "$(command -v pkgin)" ]; then
-	printf "pkg detected\nInstalling dependencies...\n"
+	printf "pkgin detected\nInstalling dependencies...\n"
 	pkgin -y install $BSD_DEPENDENCIES
 
 else
-printf "Package manager not found! Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\"" to compile and install in your system!\n""
+printf "A valid package manager was not found! Please install $DEPENDENCIES manually and run as root \"make -j\$(nproc); make install\"" to compile and install in your system!\n""
 fi
 
 # Compile
