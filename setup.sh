@@ -22,10 +22,15 @@ elif [ -x "$(command -v pacman)" ]; then
 	printf "pacman detected\nInstalling dependencies...\n"
 	pacman -S --noconfirm $DEPENDENCIES
 
-# RHEL
-elif [ -x "$(command -v rpm)" ]; then
-	printf "rpm detected\nInstalling dependencies...\n"
-	rpm -i $DEPENDENCIES
+# Fedora
+elif [ -x "$(command -v dnf)" ]; then
+	printf "dnf detected\nInstalling dependencies...\n"
+	dnf install -y $DEPENDENCIES
+
+# CentOS
+elif [ -x "$(command -v yum)" ]; then
+	printf "yum detected\nInstalling dependencies...\n"
+	yum install -y $DEPENDENCIES
 
 # Gentoo
 elif [ -x "$(command -v emerge)" ]; then
