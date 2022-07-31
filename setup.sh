@@ -53,8 +53,8 @@ fi
 
 # Compile
 make -j$(nproc)
-EXIT_CODE = $?
-if [[ $EXIT_CODE -eq 0 ]]
+EXIT_CODE=$?
+if [[ $EXIT_CODE -eq 0 ]]; then
 	printf "Compiled! Please run \"make install\" as super user to install in your system.\n"
 else
 	printf "Something went wrong!"
