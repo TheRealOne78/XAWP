@@ -20,7 +20,7 @@ if [ -x "$(command -v apt-get)" ]; then
 # Arch
 elif [ -x "$(command -v pacman)" ]; then
 	printf "apt-get detected\nInstalling dependencies...\n"
-	pacman -S $DEPENDENCIES
+	pacman -S --noconfirm $DEPENDENCIES
 
 # RHEL
 elif [ -x "$(command -v rpm)" ]; then
