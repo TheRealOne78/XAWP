@@ -1,7 +1,7 @@
 #!/bin/sh
 
-dependencies="libimlib2 libconfig"
-deb-dependencies="libimlib2-dev libconfig-dev"
+dependencies="gcc make libimlib2 libx11 libconfig"
+deb-dependencies="gcc make libimlib2-dev libx11-dev libconfig-dev"
 
 # Check for root
 if [[ "$EUID" != 0 ]]; then
