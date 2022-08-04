@@ -27,8 +27,8 @@ char pathConf[4096];
 char pathArg[4096];
 double timeConf;
 double timeArg;
-char fitConf[];    /* TODO: Fit not   */
-char fitArg[];     /* implemented yet */ /* Remove fit comments after it is fully implemented */
+// char fitConf[];    /* TODO: Fit not   */
+// char fitArg[];     /* implemented yet */ /* Remove fit comments after it is fully implemented */
 
 // Misc
 int imgCount = 0;
@@ -145,23 +145,23 @@ void setRootAtoms(Display *display, Monitor *monitor) {
   if (atom_root != None && atom_eroot != None) {
   XGetWindowProperty(display, monitor->root, atom_root, 0L, 1L, False,
                      AnyPropertyType, &type, &format, &length, &after,
-                     &data_root);   
-     
-    if (type == XA_PIXMAP) {       
+                     &data_root);
+
+  if (type == XA_PIXMAP) {
       XGetWindowProperty(display, monitor->root, atom_eroot, 0L, 1L, False,
                          AnyPropertyType, &type, &format, &length, &after,
-                         &data_eroot);          
-              
+                         &data_eroot);
+
       if (data_root && data_eroot && type == XA_PIXMAP &&
           *((Pixmap *)data_root) == *((Pixmap *)data_eroot))
         XKillClient(display, *((Pixmap *)data_root));
-    }                     
-  }                       
-                         
+    }
+  }
+
   atom_root = XInternAtom(display, "_XROOTPMAP_ID", False);
   atom_eroot = XInternAtom(display, "ESETROOT_PMAP_ID", False);
-                              
-  // setting new background atoms                       
+
+  // setting new background atoms
   XChangeProperty(display, monitor->root, atom_root, XA_PIXMAP, 32,
                   PropModeReplace, (unsigned char *)&monitor->pixmap, 1);
   XChangeProperty(display, monitor->root, atom_eroot, XA_PIXMAP, 32,
@@ -199,7 +199,6 @@ int main(int argc, char **argv[]) {
     fprintf(stderr, "No 'path' setting in configuration file.\n");
   }
 
-  
   if(config_lookup_float(&cfg, "time", &flt)) {
     timeConf = flt;
     if(DEBUG == true)
@@ -269,7 +268,7 @@ int main(int argc, char **argv[]) {
       	version();
       	exit(0);
       	break;
- 
+
       case '?':
       	/* No need to print and error message because
       	   getopt_long did that already. */
@@ -384,9 +383,9 @@ int main(int argc, char **argv[]) {
         imlib_context_set_dither(1);
         imlib_context_set_blend(1);
         imlib_context_set_image(current);
-  
+
         imlib_render_image_on_drawable(0, 0);
-  
+
         setRootAtoms(display, c_monitor);
         XKillClient(display, AllTemporary);
         XSetCloseDownMode(display, RetainTemporary);
@@ -396,7 +395,7 @@ int main(int argc, char **argv[]) {
         XSync(display, False);
         imlib_context_pop();
       }
-     
+
       nanosleep(&timeout, NULL);
     }
   }
