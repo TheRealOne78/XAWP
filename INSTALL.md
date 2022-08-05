@@ -5,7 +5,7 @@
 ## Automatically
 The easiest and fastest method is by executing the following command:
 ```bash
-root\# bash ./setup.sh
+root# bash ./setup.sh
 ```
 This will ensure every dependency will be installed, the compiling and installing to the system.<br>
 If manual compiling and installing is the wanted option, the text below will explain how.
@@ -16,7 +16,7 @@ If manual compiling and installing is the wanted option, the text below will exp
 The easiest approach is by running the `configure.sh` script:<br>
 
 ```bash
-root\# bash ./configure.sh
+root# bash ./configure.sh
 ```
 This bash script will automatically check and install all dependencies via the package manager the system is using.
 The following package managers are available:
@@ -41,17 +41,17 @@ The dependencies XAWP needs for compiling and executing are the following:
 ### Automatic compiling
 The following command will be used for automatic compiling:
 ```bash
-foo\# bash ./compile.sh
+foo$ bash ./compile.sh
 ```
 This method will use by default every thread available in the selected device, however the XAWP source code is not big and it should compile fast in modern computers.
 
 ### Manual compiling
 The only command needed for compiling in Linux based distributions is `make` and for the BSD Family is `gmake`. It can be executed as following:
 ```bash
-\#Linux:
-foo\# make -j$(nproc)
-\#BSD:
-foo\# gmake -j$(nproc)
+#Linux:
+foo$ make -j$(nproc)
+#BSD:
+foo$ gmake -j$(nproc)
 ```
 Of course, this command needs to be executed in the same directory with the `Makefile` file, otherwise the command will fail.
 `-j$(nproc)` is the an argument specifing to use all the threads available in the system. Using less threads is quite simple, $(nproc) being modified with the number of CPU threads make will use for compiling. Eg: `make -j2 # will only use 2 CPU threads`
@@ -59,23 +59,23 @@ Of course, this command needs to be executed in the same directory with the `Mak
 ### Installing
 Installing is easy as pie, the only command needed is the following:
 ```bash
-root\# make install
+root# make install
 ```
 
 However, there is another manual option that requires copying by the final build to the system and making it executable:
 ```bash
-root\# cp ./build/xawp /usr/bin/ \# Copies the build to /usr/bin
-root\# chmod +x /usr/bin/xawp    \# Changes the permissions of the file to be executable
+root# cp ./build/xawp /usr/bin/ \# Copies the build to /usr/bin
+root# chmod +x /usr/bin/xawp    \# Changes the permissions of the file to be executable
 ```
 
 # Uninstalling
 Uninstalling the compiled file can be made by running the following command:
 ```bash
-root\# make uninstall
+root# make uninstall
 ```
 
 If the user wants to uninstall manually or xawp was installed in another directory the follwing command will be executed: 
 ```bash
-root\# rm -f /usr/bin/xawp # removes xawp from the system
-                           # change /usr/bin/xawp with the xawp path if it differs
+root# rm -f /usr/bin/xawp # removes xawp from the system
+                          # change /usr/bin/xawp with the xawp path if it differs
 ```
