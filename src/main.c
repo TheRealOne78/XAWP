@@ -25,10 +25,14 @@ const char appendConfPath[] = "/.config/xawp/xawp.conf"; // The path that will b
 bool DEBUG = true;
 char pathConf[4096];
 char pathArg[4096];
+unsigned confImgCount;
+unsigned argImgCount;
+char **prConfPath;
+char *pcConfPath;
+char **prArgPath;
+char *pcArgPath;
 double timeConf;
 double timeArg;
-// char fitConf[];    /* TODO: Fit not   */
-// char fitArg[];     /* implemented yet */ /* Remove fit comments after it is fully implemented */
 
 // Misc
 int imgCount = 0;
@@ -48,31 +52,41 @@ void help() {
  printf(                                                                                "\n"
         "XAWP - X11 Animated Wallpaper Player"                                          "\n"
         "Play animated wallpapers in X11 by passing XAWP a directory containing the"    "\n"
-	"pictures frames wanted to be displayed."                                       "\n"
-	                                                                                "\n"
-        "Usage: [options] images_path\n"						"\n"
-        "Options:"									"\n"
-        "-h, --help \t Output this help list and exit"					"\n"
-	"-t, --time \t Set the time XAWP needs to wait between the"			"\n"
-	"\t\t change of images: --time seconds.milliseconds"				"\n"
-	"-v, --version \t Output version information and license and exit"		"\n"
-	"-D, --debug \t Output the debug log"						"\n"
-	"\nNote that XAWP uses a lot of resources like RAM and CPU!\n"			"\n"
-	);
+	      "pictures frames wanted to be displayed."                                       "\n"
+	                                                                                      "\n"
+        "Usage: [options] images_path\n"						                                    "\n"
+        "Options:"									                                                    "\n"
+        "-h, --help \t Output this help list and exit"					                        "\n"
+	      "-t, --time \t Set the time XAWP needs to wait between the"			                "\n"
+	      "\t\t change of images: --time seconds.milliseconds"				                    "\n"
+	      "-v, --version \t Output version information and license and exit"		          "\n"
+	      "-D, --debug \t Output the debug log"						                                "\n"
+	      "\nNote that XAWP uses a lot of resources like RAM and CPU!\n"			            "\n"
+	     );
 }
 
 void version() {
- printf("XAWP version "); printf(ver);
-	printf(										"\n"
-	"Copyright (C) 2022 TheRealOne78"						"\n"
-	"License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>. \n"
-	"This is free software: you are free to change and redistribute it."		"\n"
-	"There is NO WARRANTY, to the extent permitted by law.\n"			"\n"
-	);
+  printf("XAWP version "); printf(ver);
+	printf(										                                                            "\n"
+	       "Copyright (C) 2022 TheRealOne78"						                                  "\n"
+	       "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\n"
+	       "This is free software: you are free to change and redistribute it."		        "\n"
+	       "There is NO WARRANTY, to the extent permitted by law.\n"		                 	"\n"
+	      );
 }
 
-void getImgCount(char *str) {
-  imgCount = 0;
+void getImgCount(char *str, int argORcount) {
+  unsigned *pImgCount;
+  if(argORcount == 0)
+    pImgCount = &confImgCount;
+  else if(argORcount == 1)
+    pImgCount = &argImgCount;
+  else {
+    printf("Something went wrong: argORcount is %d", argORcount);
+    exit(EXIT_FAILURE);
+  }
+  *pImgCount = 0;
+
   DIR *d;
   struct dirent *dir;
   int i = 0;
@@ -84,7 +98,7 @@ void getImgCount(char *str) {
   {
      while ((dir = readdir(d)) != NULL)
      {
-       imgCount++;
+       *pImgCount++;
      }
      closedir(d);
   }
@@ -102,31 +116,47 @@ static int compare_fun (const void *p, const void *q) {
   return cmp;
 }
 
-void getImgPath(char *str, char **path) {
+void getImgPath(char *str[maxPathLenght], int argORcount) {
   DIR *d;
   struct dirent *dir;
-  int i = 0;
+  unsigned *pImgCount;
+  char *pImgPath;
 
-  // Now alocate result[] and put the file names inside result[]
-  d = opendir(str);
+  if(argORcount == 0) {
+    pImgCount = &confImgCount;
+    pImgPath = &pConfPath;
+  }
+  else if(argORcount == 1) {
+    pImgCount = &argImgCount;
+    pImgPath = &pConfPath;
+  }
+  else {
+    printf("Something went wrong: argORcount is %d", argORcount);
+    exit(EXIT_FAILURE);
+  }
+  char **p = malloc( N * sizeof( char* ))
+  pImgPath=(char*)malloc((*pImgCount) * maxPathLenght * sizeof(char));
+
+  d = opendir(*str);
+  int i = 0;
   if (d)
   {
     while ((dir = readdir(d)) != NULL) {
-      strcpy(*path[i], dir->d_name);
+      strcpy((*(pImgPath * i)), dir->d_name);
       i++;
     }
     closedir(d);
   }
     //readdir() dumps mixed files, so will order with qsort()
-    qsort(path, imgCount, sizeof path[0], compare_fun);
+    qsort(pImgPath, imgCount, sizeof pImgPath[0], compare_fun);
 
     /* Now check if there are any "." and ".." files in path
      * in order to know where the actual images start     */
-    if(*path[0] == ".")
+    if(pImgPath[0] == ".")
       hasCurrentDir = true;
     else
       hasCurrentDir = false;
-    if(*path[1] == "..")
+    if(pImgPath[1] == "..")
       hasParentDir = true;
     else
       hasParentDir = false;
@@ -169,65 +199,18 @@ void setRootAtoms(Display *display, Monitor *monitor) {
 }
 
 int main(int argc, char **argv[]) {
-  config_t cfg;
-  config_setting_t *setting;
-  char *str;
-  double flt;
-  int bln;
-
-  config_init(&cfg);
-
-  // Read the file. If there is an error, report it and exit.
-  char confPath[maxPathLenght]; strcpy(confPath, getenv("HOME")); strcat(confPath, appendConfPath);
-  if(DEBUG == true)
-    printf("DEBUG: xawp.conf path: %s\n", confPath);
-  if(! config_read_file(&cfg, confPath)) {
-    fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
-           config_error_line(&cfg), config_error_text(&cfg));
-    config_destroy(&cfg);
-    return(EXIT_FAILURE);
-  }
-
-  if(config_lookup_string(&cfg, "path", &str)) {
-    strcpy(pathConf, str);
-    getImgCount(&pathConf);
-    char confPath[imgCount][maxPathLenght];
-    getImgPath(&pathConf, &confPath);
-    isConfConf = true;
-  }
-  else {
-    fprintf(stderr, "No 'path' setting in configuration file.\n");
-  }
-
-  if(config_lookup_float(&cfg, "time", &flt)) {
-    timeConf = flt;
-    if(DEBUG == true)
-      printf("DEBUG: timeConf: %f\n", timeConf);
-  }
-  else {
-    fprintf(stderr, "No 'time' setting in configuration file.\n");
-  }
-
-  if(config_lookup_bool(&cfg, "debug", &bln)) {
-    DEBUG = bln;
-  }
-  else {
-    fprintf(stderr, "No 'debug' setting in configuration file.\n");
-  }
-  config_destroy(&cfg);
-
   char configTime[6];
   configTime[0] = '\0';
 
   static struct option long_options [] = {
   	{ "help",    no_argument,       NULL,	'h' },
   	{ "time",    required_argument, NULL,	't' },
-  	{ "version", no_argument,	NULL,	'v' },
+  	{ "version", no_argument,     	NULL,	'v' },
   	{ "debug",   no_argument,       NULL,	'D' },
-	{ "fit",     required_argument, NULL,   'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
-	{ "directory",required_argument,NULL,   'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
-	{ "config",  required_argument, NULL,   'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
-  	{ NULL,	     0,		        NULL,	0   }
+	  { "fit",     required_argument, NULL, 'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
+	  { "directory",required_argument,NULL, 'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
+	  { "config",  required_argument, NULL, 'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
+  	{ NULL,	     0,		              NULL,	0   }
   	};
 
   while(1){
@@ -238,7 +221,7 @@ int main(int argc, char **argv[]) {
 
     switch (c){
       case 'D':
-      	DEBUG=!DEBUG;
+      	DEBUG = !DEBUG;
       	break;
 
       case 'h':
@@ -279,12 +262,55 @@ int main(int argc, char **argv[]) {
       	abort();
     }
   }
-  char **pArgPath;
+
+  config_t cfg;
+  config_setting_t *setting;
+  char *str;
+  double flt;
+  int bln;
+  config_init(&cfg);
+
+  // Read the file. If there is an error, report it and exit.
+  char confPath[maxPathLenght]; strcpy(confPath, getenv("HOME")); strcat(confPath, appendConfPath);
+  if(DEBUG == true)
+    printf("DEBUG: xawp.conf path: %s\n", confPath);
+  if(! config_read_file(&cfg, confPath)) {
+    fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
+           config_error_line(&cfg), config_error_text(&cfg));
+    config_destroy(&cfg);
+    return(EXIT_FAILURE);
+  }
+
+  if(config_lookup_string(&cfg, "path", &str)) {
+    strcpy(pathConf, str);
+    getImgCount(&pathConf, 0); //conf=0, arg=1
+    getImgPath(&pathConf, 0);  //conf=0, arg=1
+  }
+  else {
+    fprintf(stderr, "No 'path' setting in configuration file.\n");
+  }
+
+  if(config_lookup_float(&cfg, "time", &flt)) {
+    timeConf = flt;
+    if(DEBUG == true)
+      printf("DEBUG: timeConf: %f\n", timeConf);
+  }
+  else {
+    fprintf(stderr, "No 'time' setting in configuration file.\n");
+  }
+
+  if(config_lookup_bool(&cfg, "debug", &bln)) {
+    DEBUG = bln;
+  }
+  else {
+    fprintf(stderr, "No 'debug' setting in configuration file.\n");
+  }
+  config_destroy(&cfg);
+
+
   if(isArgConf == true) {
-    getImgCount(&pathArg);
-    char argPath[imgCount][maxPathLenght];
-    getImgPath(&pathArg, &isConfConf == argPath);
-    pArgPath = &argPath;
+   // getImgCount(&pathArg, 1); // conf=0, arg=1
+    //pArgPath = &argPath;
   }
 
   if(DEBUG==true)
