@@ -74,7 +74,11 @@ void version() {
 }
 
 void getImgCount(char *str, int argORcount) {
+  /* This function gets the string of the directory where the images exist and
+   * counts every image. argORcout is to know if pImgCount should point to
+   * the argument img count variable or configuration count variable.       */
   unsigned *pImgCount;
+
   if(argORcount == 0)
     pImgCount = &confImgCount;
   else if(argORcount == 1)
@@ -89,8 +93,6 @@ void getImgCount(char *str, int argORcount) {
   struct dirent *dir;
   int i = 0;
 
-  /* Check to see how many images are inside the directory to
-   * know how to define path[]                             */
   d = opendir(str);
   if (d)
   {
@@ -105,7 +107,10 @@ void getImgCount(char *str, int argORcount) {
 static int compare_fun (const void *p, const void *q) {
   /* compare_fun() and some code from getImgPath() from
    * https://www.linuxquestions.org/questions/programming-9/how-to-list-and-sort-files-in-some-directory-by-the-names-on-linux-win-in-c-4175555160/
-   * by NevemTeve - Thank you NevemTeve              */
+   * by NevemTeve - Thank you NevemTeve
+   * This function is mandatory for qsort to be able to know
+   * what approach to use to sort the images              */
+
   const char *l = p;
   const char *r = q;
   int cmp;
@@ -115,6 +120,25 @@ static int compare_fun (const void *p, const void *q) {
 }
 
 void getImgPath(char *str[maxPathLenght], int argORcount) {
+  /* This function serves for saving the images paths from a
+   * choosen directory to a dynamically allocated array of
+   * pointers, pointers pointing to the string of path
+   * I choosed this way because a normal initialized array
+   * would use much more memory, Imlib uses a lot of memory
+   * anyway.
+   *
+   * Just like getImgCount(), getImgPath() gets argORcount
+   * which is used to know where pImgCount and pImgPath
+   * should point to: argument or configuration file
+   *
+   * readdir() mixes up the files order, so qsort is used
+   *
+   * Most partitions have their first files as . and ..,
+   * current directory and previous directory respectively
+   * which shouldn't be part of the image loading, so if
+   * statements are used to know if the first 1-2 files
+   * are or not . and ..                                  */
+
   DIR *d;
   struct dirent *dir;
   unsigned *pImgCount;
@@ -161,6 +185,9 @@ void getImgPath(char *str[maxPathLenght], int argORcount) {
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {
+  /* This function should clear and load the images to
+   * X11 screen.                                    */
+
   Atom atom_root, atom_eroot, type;
   unsigned char *data_root, *data_eroot;
   int format;
@@ -197,9 +224,11 @@ void setRootAtoms(Display *display, Monitor *monitor) {
 }
 
 int main(int argc, char **argv[]) {
+  //TODO: DON'T FORGET TO free()!!!
   char configTime[6];
   configTime[0] = '\0';
 
+  // Do stuff with the arguments
   static struct option long_options [] = {
   	{ "help",    no_argument,       NULL,	'h' },
   	{ "time",    required_argument, NULL,	't' },
@@ -209,7 +238,7 @@ int main(int argc, char **argv[]) {
 	  { "directory",required_argument,NULL, 'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
 	  { "config",  required_argument, NULL, 'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
   	{ NULL,	     0,		              NULL,	0   }
-  	};
+  };
 
   while(1){
     int c = getopt_long(argc, argv, "ht:vDf:d:c:", long_options, NULL);
@@ -243,7 +272,7 @@ int main(int argc, char **argv[]) {
 
       case 'c':
         printf("Custom configuration file is not implemented yet, skipping...\n");
-        //TODO: implement this directory
+        //TODO: implement this custom config file
     	  break;
 
       case 'v':
@@ -314,6 +343,7 @@ int main(int argc, char **argv[]) {
 
   if(DEBUG==true)
     fprintf(stdout, "DEBUG: Loading images\n");
+
 //  char **path;
 //  if(isArgConf == true)
 //    path = *pArgPath;
@@ -331,6 +361,7 @@ int main(int argc, char **argv[]) {
   if(hasParentDir == true)
     fileOffset++;
 
+  // Loading Images to ImLib
   Imlib_Image images[imgCount-fileOffset];
   for(int i = 0; fileOffset + i < imgCount; i++){
   //images[i] = *path[fileOffset+i];
@@ -343,7 +374,8 @@ int main(int argc, char **argv[]) {
     images[imgCount] = imlib_load_image(argv[imgCount+noimgArgs]);
   }
   int images_count = argc-1; */
-
+  //TODO: DON'T FORGET TO free()!!!!
+  // Loading the monitors, counting them and getting the resolution
   if(DEBUG==true)
     fprintf(stdout, " DEBUG: Loading monitors\n");
 
@@ -392,6 +424,8 @@ int main(int argc, char **argv[]) {
   if(DEBUG==true)
     fprintf(stdout, "DEBUG: Loaded %d screens\n", screen_count);
 
+  /* Rendering the images on the screens found at the
+   * choosen time interval, forever                */
   if(DEBUG==true)
     fprintf(stdout, "DEBUG: Starting render loop");
 
