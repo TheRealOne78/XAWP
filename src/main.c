@@ -27,10 +27,8 @@ char pathConf[4096];
 char pathArg[4096];
 unsigned confImgCount;
 unsigned argImgCount;
-char **prConfPath;
-char *pcConfPath;
-char **prArgPath;
-char *pcArgPath;
+char **prConfPath; // pointer to row Configuration Paths
+char **prArgPath;  // pointer to row Argument Paths
 double timeConf;
 double timeArg;
 
@@ -82,7 +80,7 @@ void getImgCount(char *str, int argORcount) {
   else if(argORcount == 1)
     pImgCount = &argImgCount;
   else {
-    printf("Something went wrong: argORcount is %d", argORcount);
+    printf("Something went wrong: getImgCount argORcount is %d", argORcount);
     exit(EXIT_FAILURE);
   }
   *pImgCount = 0;
@@ -120,29 +118,29 @@ void getImgPath(char *str[maxPathLenght], int argORcount) {
   DIR *d;
   struct dirent *dir;
   unsigned *pImgCount;
-  char *pImgPath;
+  char ***pImgPath;
 
   if(argORcount == 0) {
     pImgCount = &confImgCount;
-    pImgPath = &pConfPath;
+    pImgPath = &prConfPath;
   }
   else if(argORcount == 1) {
     pImgCount = &argImgCount;
-    pImgPath = &pConfPath;
+    pImgPath = &prArgPath;
   }
   else {
-    printf("Something went wrong: argORcount is %d", argORcount);
+    printf("Something went wrong: getImgPath argORcount is %d", argORcount);
     exit(EXIT_FAILURE);
   }
-  char **p = malloc( N * sizeof( char* ))
-  pImgPath=(char*)malloc((*pImgCount) * maxPathLenght * sizeof(char));
+  *pImgPath = (char*)malloc( *pImgCount * sizeof( char* ));
 
   d = opendir(*str);
   int i = 0;
   if (d)
   {
     while ((dir = readdir(d)) != NULL) {
-      strcpy((*(pImgPath * i)), dir->d_name);
+      *pImgPath[i]=(char*)malloc(maxPathLenght * sizeof(char));
+      strcpy(*pImgPath[i], dir->d_name);
       i++;
     }
     closedir(d);
@@ -152,11 +150,11 @@ void getImgPath(char *str[maxPathLenght], int argORcount) {
 
     /* Now check if there are any "." and ".." files in path
      * in order to know where the actual images start     */
-    if(pImgPath[0] == ".")
+    if(*pImgPath[0] == ".")
       hasCurrentDir = true;
     else
       hasCurrentDir = false;
-    if(pImgPath[1] == "..")
+    if(*pImgPath[1] == "..")
       hasParentDir = true;
     else
       hasParentDir = false;
@@ -235,17 +233,18 @@ int main(int argc, char **argv[]) {
         break;
 
       case 'f':
-	//TODO: implement this
-	break;
+        printf("Fit is not implemented yet, skipping...\n");
+	      //TODO: implement this fit
+        break;
 
       case 'd':
-	//TODO: implement this
-	break;
+	      strcpy(pathArg, optarg);
+        break;
 
       case 'c':
-	strcpy(pathArg, optarg);
-	isArgConf = true;
-    	break;
+        printf("Custom configuration file is not implemented yet, skipping...\n");
+        //TODO: implement this directory
+    	  break;
 
       case 'v':
       	version();
@@ -308,23 +307,23 @@ int main(int argc, char **argv[]) {
   config_destroy(&cfg);
 
 
-  if(isArgConf == true) {
-   // getImgCount(&pathArg, 1); // conf=0, arg=1
-    //pArgPath = &argPath;
-  }
+//  if(isArgConf == true) {
+//    getImgCount(&pathArg, 1); // conf=0, arg=1
+//    pArgPath = &argPath;
+//  }
 
   if(DEBUG==true)
     fprintf(stdout, "DEBUG: Loading images\n");
-  char **path;
-  if(isArgConf == true)
-    path = *pArgPath;
-  else if(isConfConf == true)
-    path = &confPath;
-  else {
-    fprintf(stderr, "No valid path settings! Please check your configuration file and arguments.\n");
-    help();
-    exit(1);
-  }
+//  char **path;
+//  if(isArgConf == true)
+//    path = *pArgPath;
+//  else if(isConfConf == true)
+//    path = &confPath;
+//  else {
+//    fprintf(stderr, "No valid path settings! Please check your configuration file and arguments.\n");
+//    help();
+//    exit(1);
+//  }
 
   int fileOffset = 0;
   if(hasCurrentDir == true)
@@ -339,7 +338,7 @@ int main(int argc, char **argv[]) {
   }
   /* -- Old Imlib_Image loading, please delete this after the new implementation --
   Imlib_Image images[argc-noimgArgs];
-  
+
   for (int imgCount=0; imgCount <= argc-noimgArgs-1; imgCount++){
     images[imgCount] = imlib_load_image(argv[imgCount+noimgArgs]);
   }
