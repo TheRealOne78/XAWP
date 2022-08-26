@@ -1,10 +1,23 @@
 #!/bin/bash
 
+#Compiling
 printf "[i] Compiling with $(nproc) threads..."
-make -j$(nproc)
+if [ -x "$(command -v pkg)" ]; then
+	gmake -j$(nproc)
+# OpenBSD
+elif [ -x "$(command -v pkg_add)" ]; then
+	gmake -j$(nproc)
+# NetBSD
+elif [ -x "$(command -v pkgin)" ]; then
+	gmake -j$(nproc)
+# Linux distributions
+else
+  make -j$(nproc)
+fi
 EXIT_CODE=$?
+
 if [[ $EXIT_CODE -eq 0 ]]; then
-	printf "\n[i] Compiling successful! Install XAWP with \"make install\" as root.\n"
+	printf "\n[i] Compiling successful!\n"
   exit $EXIT_CODE
 
 else

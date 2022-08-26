@@ -47,30 +47,34 @@ typedef struct {
 } Monitor;
 
 void help() {
- printf(                                                                                "\n"
-        "XAWP - X11 Animated Wallpaper Player"                                          "\n"
-        "Play animated wallpapers in X11 by passing XAWP a directory containing the"    "\n"
-	      "pictures frames wanted to be displayed."                                       "\n"
-	                                                                                      "\n"
-        "Usage: [options] images_path\n"						                                    "\n"
-        "Options:"									                                                    "\n"
-        "-h, --help \t Output this help list and exit"					                        "\n"
-	      "-t, --time \t Set the time XAWP needs to wait between the"			                "\n"
-	      "\t\t change of images: --time seconds.milliseconds"				                    "\n"
-	      "-v, --version \t Output version information and license and exit"		          "\n"
-	      "-D, --debug \t Output the debug log"						                                "\n"
-	      "\nNote that XAWP uses a lot of resources like RAM and CPU!\n"			            "\n"
-	     );
+  printf(                                                                               "\n"
+         "XAWP - X11 Animated Wallpaper Player"                                         "\n"
+         "Play animated wallpapers in X11 by passing XAWP a directory containing the"   "\n"
+         "pictures frames wanted to be displayed."                                      "\n"
+                                                                                        "\n"
+         "Usage: [options] images_path"                                                 "\n"
+                                                                                        "\n"
+         "Options:"									                                                    "\n"
+         "-h, --help \t Output this help list and exit"					                        "\n"
+         "-t, --time \t Set the time XAWP needs to wait between the"			              "\n"
+         "\t\t change of images: --time seconds.milliseconds"				                    "\n"
+         "-v, --version \t Output version information and license and exit"		          "\n"
+         "-D, --debug \t Output the debug log"						                              "\n"
+                                                                                        "\n"
+         "Note that XAWP uses a lot of resources like RAM and CPU!"                     "\n"
+                                                                                        "\n"
+        );
 }
 
 void version() {
-  printf("XAWP version "); printf(ver);
-	printf(										                                                            "\n"
+  printf("XAWP version %s" /* version number */                                         "\n"
+                                                                                        "\n"
 	       "Copyright (C) 2022 TheRealOne78"						                                  "\n"
 	       "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\n"
 	       "This is free software: you are free to change and redistribute it."		        "\n"
-	       "There is NO WARRANTY, to the extent permitted by law.\n"		                 	"\n"
-	      );
+	       "There is NO WARRANTY, to the extent permitted by law."                        "\n"
+                                                                                        "\n"
+        , ver);
 }
 
 void getImgCount(char *str, int argORcount) {
@@ -221,6 +225,81 @@ void setRootAtoms(Display *display, Monitor *monitor) {
                   PropModeReplace, (unsigned char *)&monitor->pixmap, 1);
   XChangeProperty(display, monitor->root, atom_eroot, XA_PIXMAP, 32,
                   PropModeReplace, (unsigned char *)&monitor->pixmap, 1);
+}
+
+void ImFit(char *sampleImg, int fitOpt){
+  /* This function is responsible for fitting the image when rendering depending
+   * in user's arguments.
+   *
+   * This function gets passed 2 variables, a char pointer to the first image and
+   * a int which tells how the image should fit
+   * For example, if the int is 0 or NULL it will fit fullscreen or if fitOpt is 2,
+   * the image will be rendered in the center of the screen.
+   *
+   * Right now, the available fit options are the following[0-6]:
+   *
+   *  ─────┬────────────────────
+   *   Opt │ Fit name
+   *  ─────┼────────────────────
+   *   0   │ Fullscreen
+   *       │
+   *   1   │ Fullscreen Cropped
+   *       │
+   *   2   │ Centered
+   *       │
+   *   3   │ Left-up Corner
+   *       │
+   *   4   │ Left-down Corner
+   *       │
+   *   5   │ Right-down Corner
+   *       │
+   *   6   │ Right-up Corner
+   *
+   * The image passed through the char pointer will be analized for determining it's
+   * width and height.
+   *
+   * The reason this function analyzes only the first image is because analyzing every
+   * single image would be redundant, loosing a lot of time and CPU free usage. XAWP
+   * is not supposed to run different width and height images, just the original coalesce
+   * There is an exception however where all the images will suffer modifications       */
+
+  /* This function is still a TODO and this is it's pseudo-code:
+   * int fitOptLimit = 6;
+   * int imWidth = Imlib_get_image_width(*sampleImg);
+   * int imHeight = Imlib_get_image_height(*sampleImg);
+   * if(fitOpt == 0){
+   * Scale image based on width and height;
+   * return position;
+   * }
+   * else if(fitOpt == 1){
+   * pass images to crop function image based on width and height since the images
+   * will suffer modifications;
+   * Return position;
+   * }
+   * else if(fitOpt == 2){
+   * Determine the center of the image and XScreen's width and height and then
+   * determine where the position should start from with that info;
+   * }
+   * else if(fitOpt == 3){
+   * Return the position as 0,0 since no modifications are needed;
+   * }
+   * else if(fitOpt == 4){
+   * Determine XScreen's height;
+   * Return position as (Xscreen height - img height),0;
+   * else if(fitOpt == 5){
+   * Determine XScreen's width and height
+   * Return position as (XScreen height - img height),(XScreen width - img width);
+   * }
+   * else if(fitOpt == 6){
+   * Determine XScreen's width and height;
+   * Return position as 0,(XScreen width - img width);
+   * }
+   * else{
+   * printf("Fatal error! fitOpt is %d and should be [0-%d]". Please make sure fit"
+   * "is configured correctly\n", fitOpt, fitOptLimit);
+   * exit(EXIT_FAILURE);
+   * }
+   *                                                                               */
 }
 
 int main(int argc, char **argv[]) {

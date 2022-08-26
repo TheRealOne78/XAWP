@@ -7,16 +7,18 @@ if [[ "$EUID" != 0 ]]; then
 fi
 
 # Basic global variables
-
-TOTAL_DEPS=5 # Constant for all dependencies
-ALL_DEPS=0 # To check if it matches TOTAL_DEPS after checking dependencies
-PKG_MGR="" # The package manager that will install the dependencies
+PKG_MGR=""          # The package manager that will install the dependencies
+WILL_INSTALL=false  # Check if anything will be installed, else skip
+DEPENDENCIES=""
+DEB_DEPENDENCIES=""
+RPM_DEPENDENCIES=""
+BSD_DEPENDENCIES=""
 
 # List of dependencies
-# common: gcc make imlib2 libx11 libconfig
-# debian: gcc make libimlib2-dev libx11-dev libconfig-dev
-# deb:    gcc make imlib2-devel libX11-devel libconfig-devel
-# BSD:    gcc gmake imlib2 libx11 libconfig"
+# Common Linux: gcc make imlib2 libx11 libconfig
+# Debian:       gcc make libimlib2-dev libx11-dev libconfig-dev
+# RHEL:         gcc make imlib2-devel libX11-devel libconfig-devel
+# BSD:          gcc gmake imlib2 libx11 libconfig"
 
 # Checking existing dependencies
 if [ ! -x "$(command -v gcc)" ]; then
@@ -25,65 +27,163 @@ if [ ! -x "$(command -v gcc)" ]; then
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES gcc"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES gcc"
   BSD_DEPENDENCIES="$BSD_DEPENDENCIES gcc"
+	WILL_INSTALL=true
 fi
 
 if [ ! -x "$(command -v make)" ]; then
-	printf "[i] gcc not detected, adding it in the dependencies install queue"
+	printf "[i] make not detected, adding it in the dependencies install queue"
 	DEPENDENCIES="$DEPENDENCIES make"
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES make"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES make"
   BSD_DEPENDENCIES="$BSD_DEPENDENCIES gmake"
+	WILL_INSTALL=true
+fi
+
+if [ ! ! ]; then
+	printf "[i] imlib2 not detected, adding it in the dependencies install queue"
+	DEPENDENCIES="$DEPENDENCIES imlib2"
+  DEB_DEPENDENCIES="$DEB_DEPENDENCIES libimlib2-dev"
+  RPM_DEPENDENCIES="$RPM_DEPENDENCIES imlib2-devel"
+  BSD_DEPENDENCIES="$BSD_DEPENDENCIES imlib2"
+	WILL_INSTALL=true
+fi
+
+if [ ! ! ]; then
+	printf "[i] libx11 not detected, adding it in the dependencies install queue"
+	DEPENDENCIES="$DEPENDENCIES libx11"
+  DEB_DEPENDENCIES="$DEB_DEPENDENCIES libx11-dev"
+  RPM_DEPENDENCIES="$RPM_DEPENDENCIES libx11-devel"
+  BSD_DEPENDENCIES="$BSD_DEPENDENCIES libx11"
+	WILL_INSTALL=true
+fi
+
+if [ ! ! ]; then
+	printf "[i] libconfig not detected, adding it in the dependencies install queue"
+	DEPENDENCIES="$DEPENDENCIES libconfig"
+  DEB_DEPENDENCIES="$DEB_DEPENDENCIES libconfig-dev"
+  RPM_DEPENDENCIES="$RPM_DEPENDENCIES libconfig-devel"
+  BSD_DEPENDENCIES="$BSD_DEPENDENCIES libconfig"
+	WILL_INSTALL=true
 fi
 
 # Choosing the right package manager
 ## Linux distributions
 ### Debian
-if [ -x "$(command -v apt-get)" ]; then
-	printf "[i] apt-get package manager detected\n"
-  PKG_MGR="apt-get"
+if [ $WILL_INSTALL == true ]; then
+  if [ -x "$(command -v apt-get)" ]; then
+  	printf "[i] apt-get package manager detected\n"
+    PKG_MGR="apt-get"
 
-### Arch
-elif [ -x "$(command -v pacman)" ]; then
-	printf "[i] pacman package manager detected\n"
-	PKG_MGR="pacman"
+  ### Arch
+  elif [ -x "$(command -v pacman)" ]; then
+  	printf "[i] pacman package manager detected\n"
+  	PKG_MGR="pacman"
 
-### Fedora
-elif [ -x "$(command -v dnf)" ]; then
-	printf "[i] dnf package manager detected\n"
-	PKG_MGR="dnf"
+  ### Fedora
+  elif [ -x "$(command -v dnf)" ]; then
+  	printf "[i] dnf package manager detected\n"
+  	PKG_MGR="dnf"
 
-### CentOS - imlib2 lib/devel does not exist
-#elif [ -x "$(command -v yum)" ]; then
-# printf "yum package manager detected\n"
-#	PKG_MGR="yum"
+  ### CentOS - imlib2 lib/devel does not exist
+  #elif [ -x "$(command -v yum)" ]; then
+  # printf "yum package manager detected\n"
+  #	PKG_MGR="yum"
 
-### Gentoo
-elif [ -x "$(command -v emerge)" ]; then
-	printf "[e] Portage detected!\n\
-[e] Automatic package instalation with portage may lead to package conflicts.\n\
-[e] Please install $DEPS manually and run this file again to compile and install XAWP in your system!\n"
-  exit 1
+  ### Gentoo
+  elif [ -x "$(command -v emerge)" ]; then
+  	printf "[e] Portage detected!\n\
+  [e] Automatic package instalation with portage may lead to package conflicts.\n\
+  [e] Please install $DEPS manually and run this file again to compile and install XAWP in your system!\n"
+    exit 1
 
-##BSD Family
-### FreeBSD
-elif [ -x "$(command -v pkg)" ]; then
-	printf "[i] pkg package manager detected\n"
-	PKG_MGR="pkg"
+  ##BSD Family
+  ### FreeBSD
+  elif [ -x "$(command -v pkg)" ]; then
+  	printf "[i] pkg package manager detected\n"
+  	PKG_MGR="pkg"
 
-### OpenBSD
-elif [ -x "$(command -v pkg_add)" ]; then
-	printf "[i] pkg_add detected\n"
-	printf "[w] If you are using OpenBSD, you might not have a good desktop experience because of OpenBSD's lack of desktop support."
-  PKG_MGR="pkg_add"
+  ### OpenBSD
+  elif [ -x "$(command -v pkg_add)" ]; then
+  	printf "[i] pkg_add detected\n"
+  	printf "[w] If you are using OpenBSD, you might not have a good desktop experience because of OpenBSD's lack of desktop support.\n"
+    PKG_MGR="pkg_add"
 
-### NetBSD
-elif [ -x "$(command -v pkgin)" ]; then
-	printf "[i] pkgin package manager detected\n"
-	PKG_MGR="pkgin"
+  ### NetBSD
+  elif [ -x "$(command -v pkgin)" ]; then
+  	printf "[i] pkgin package manager detected\n"
+  	PKG_MGR="pkgin"
 
+  ### No package manager
+  else
+    printf "[e] A valid package manager was not found!\n\
+  [e] Please install $DEPENDENCIES manually and run this file again to compile and install XAWP in your system!\n"
+    exit 1
+  fi
+  printf "[i] $PKG_MGR will be used to install the required dependencies\n"
+
+  if [ $PKG_MGR == "apt-get" ]; then
+  	$PKG_MGR install $DEB_DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+
+  elif [ $PKG_MGR == "pacman" ]; then
+  	$PKG_MGR -Sy $DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+
+  elif [ $PKG_MGR == "dnf" ]; then
+  	$PKG_MGR install $DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+
+  elif [ $PKG_MGR == "emerge" ]; then
+  	$PKG_MGR $DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+
+  elif [ $PKG_MGR == "pkg" ]; then
+  	$PKG_MGR $BSD_DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+
+  elif [ $PKG_MGR == "pkg_add" ]; then
+  	$PKG_MGR $BSD_DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+
+  elif [ $PKG_MGR == "pkgin" ]; then
+  	$PKG_MGR $BSD_DEPENDENCIES
+  	if [ $? -eq 0 ]; then
+  	  printf "[i] Packages installed successfully\n"
+  	else
+  		printf "[e] Error: $PKG_MGR returned with exit code $?, aborting!\n"
+  		exit 1
+  	fi
+  fi
 else
-  printf "[e] A valid package manager was not found!\n\
-[e] Please install $DEPS manually and run this file again to compile and install XAWP in your system!\n"
-  exit 1
+	printf "[i] Nothing to install, skipping.\n"
 fi
-printf "[i] $PKG_MGR will be used to install the required dependencies"
