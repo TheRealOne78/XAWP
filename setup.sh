@@ -2,7 +2,7 @@
 
 # Check for root
 if [[ "$EUID" != 0 ]]; then
-	echo "Please run this script with super user permission!"
+	echo "[e] Please run this script with super user permission!"
 	exit $EUID
 fi
 
