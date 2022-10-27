@@ -1,14 +1,14 @@
 LDFLAGS = -lX11 -lImlib2 -lconfig
 CC = gcc
 CFLAGS = -O2
-SRC = src/main.c
+SRC = ./src/*.c
 BIN = xawp
-DESTDIR = build/
+DESTDIR = ./build/
 INSTALLDIR = /usr/bin/
 
 $(BIN):
 	mkdir -p $(DESTDIR)
-	 $(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(DESTDIR)$(BIN)
+	$(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(DESTDIR)$(BIN)
 
 install:
 	mkdir -p $(DESTDIR)
@@ -21,7 +21,7 @@ uninstall:
 	rm -f $(INSTALLDIR)$(BIN)
 
 TESTDIR = test/
-test: $(BIN) 
+test: $(BIN)
 	$(DESTDIR)$(BIN)
 
 .PHONY: all install uninstall
