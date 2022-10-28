@@ -1,16 +1,25 @@
 #!/bin/bash
 
+RED="\e[31m"
+YELLOW="\e[33m"
+BLUE="\e[34m"
+ENDCOLOR="\e[0m"
+
+INFO="["$BLUE"i"$ENDCOLOR"]"
+WARN="["$YELLOW"w"$ENDCOLOR"]"
+ERR="["$RED"e"$ENDCOLOR"]"
+
 # Check for root
 if [[ "$EUID" != 0 ]]; then
-	echo "[e] Please run this script with super user permission!"
-	exit $EUID
+  echo "$ERR Please run this script with super user permission!"
+  exit $EUID
 fi
 
 # Install Dependencies
 bash ./configure.sh
 EXIT_CODE=$?
 if [[ ! $EXIT_CODE -eq 0 ]]; then
-	exit $EXIT_CODE;
+  exit $EXIT_CODE;
 fi
 
 # Compile
@@ -24,6 +33,6 @@ fi
 make install
 EXIT_CODE=$?
 if [[ ! $EXIT_CODE -eq 0 ]]; then
-  printf "[e] Couldn't install! Please check if XAWP compiled successfully\n"
-	exit $EXIT_CODE
+  printf "$ERR Couldn't install! Please check if XAWP compiled successfully\n"
+  exit $EXIT_CODE
 fi
