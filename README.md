@@ -1,5 +1,5 @@
 <div style="text-align: center;">
-  ![](https://i.imgur.com/DxCHBP5.png =x50%)
+  <img src="https://i.imgur.com/DxCHBP5.png" width="50%">
 </div>
 
 # X11 Animated Wallpaper Player 

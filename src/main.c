@@ -1,7 +1,40 @@
 #define _POSIX_C_SOURCE 199309L
+
 #define _DEBUG true
+#define DEBUG_TEXT_PUTS "\x1B[34mDEBUG\x1B[0m"
 
 #define MAX_PATH 4096
+
+#ifndef _COLORS_
+  #define _COLORS_
+    /* FOREGROUND */
+    #define RST "\x1B[0m"
+
+    /* Normal colors */
+    #define KBLK  "\x1B[30m" //black
+    #define KRED  "\x1B[31m" //red
+    #define KGRN  "\x1B[32m" //green
+    #define KYEL  "\x1B[33m" //yellow
+    #define KBLU  "\x1B[34m" //blue
+    #define KMAG  "\x1B[35m" //magenta
+    #define KCYN  "\x1B[36m" //cyan
+    #define KWHT  "\x1B[37m" //white
+
+    /* Bright colors */
+    #define KBBLK "\x1B[90m" //bright black(gray)
+    #define KBRED "\x1B[91m" //bright red
+    #define KBGRN "\x1B[92m" //bright green
+    #define KBYEL "\x1B[93m" //bright yellow
+    #define KBBLU "\x1B[94m" //bright blue
+    #define KBMAG "\x1B[95m" //bright magenta
+    #define KBCYN "\x1B[96m" //bright cyan
+    #define KBWHT "\x1B[97m" //bright white
+
+    /* misc */
+    #define BOLD  "\x1B[1m"  //bold
+    #define UNDL  "\x1B[4m"  //underline
+  #endif  /* _COLORS_ */
+/* end_ifndef _COLORS_ */
 
 #include <Imlib2.h>
 #include <X11/Xatom.h>
@@ -56,7 +89,252 @@ typedef struct {
   int width, height;
 } Monitor;
 
-void help() {
+void help(void);
+void version(void);
+
+void getImgCount(char str[][MAX_PATH]);
+void getImgPath(char str[][MAX_PATH], int choice);
+static int compare_fun (const void *p, const void *q);
+void freeUsingPath(void);
+void setRootAtoms(Display *display, Monitor *monitor);
+void ImFit(char *sampleImg, int fitOpt);
+
+
+int main(int argc, char *argv[]) {
+  char configTime[6];
+  configTime[0] = '\0';
+
+  // Do stuff with the arguments
+  static struct option long_options [] = {
+    { "help"     , no_argument      , NULL , 'h' },
+    { "time"     , required_argument, NULL , 't' },
+    { "version"  , no_argument      , NULL , 'v' },
+    { "debug"    , no_argument      , NULL , 'D' },
+    { "fit"      , required_argument, NULL , 'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
+    { "directory", required_argument, NULL , 'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
+    { "config"   , required_argument, NULL , 'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
+    { NULL       , 0                , NULL , 0   }
+  };
+
+  while(1) {
+    int c = getopt_long(argc, argv, "ht:vDf:d:c:", long_options, NULL);
+    /* Detect the end of the options. */
+    if (c == -1)
+      break;
+
+    switch (c) {
+      case 'D':
+        DEBUG = !DEBUG;
+        if(DEBUG==true)
+          fprintf(stdout, "Enabled debug\n");
+        break;
+
+      case 'h':
+        help();
+        exit(0);
+        break;
+
+      case 't':
+        snprintf(configTime, sizeof(configTime), "%s", optarg);
+        timeArg = atof(configTime);
+        break;
+
+      case 'f':
+        printf("Fit is not implemented yet, skipping...\n");
+        //TODO: implement this fit
+        break;
+
+      case 'd':
+        strcpy(pathArg, optarg);
+        getImgCount(&pathArg);
+        getImgPath (&pathArg, 1);
+        isArgConf = true;
+        break;
+
+      case 'c':
+        printf("Custom configuration file is not implemented yet, skipping...\n");
+        //TODO: implement this custom config file
+        char optArgPath[MAX_PATH];
+        strcpy(optArgPath, optarg);
+        break;
+
+      case 'v':
+        version();
+        exit(0);
+        break;
+
+      case '?':
+        /* No need to print and error message because
+           getopt_long did that already. */
+        exit(1);
+        break;
+
+      default:
+        abort();
+    }
+  }
+
+  double flt;
+  int bln;
+
+  config_t cfg;
+  config_setting_t *setting;
+  const char *str;
+  config_init(&cfg);
+
+  if(!isArgConf) {
+    strcpy(confPath, getenv("HOME"));
+    strcat(confPath, appendDefaultConfPath);
+  }
+
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": xawp.conf path: \"%s\"\n", confPath);
+
+  // Read the file. If there is an error, report it and exit.
+  if(! config_read_file(&cfg, confPath)) {
+    fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
+           config_error_line(&cfg), config_error_text(&cfg));
+    config_destroy(&cfg);
+    return(EXIT_FAILURE);
+  }
+
+  if(!hasArgDir && config_lookup_string(&cfg, "path", &str)) {
+    strcpy(pathConf, str);
+    getImgCount(&pathConf); //conf=0, arg=1
+    getImgPath(&pathConf, 0);  //conf=0, arg=1
+  }
+  else
+    fprintf(stderr, "No 'path' setting in configuration file.\n");
+
+  if(!hasArgTime && config_lookup_float(&cfg, "time", &flt)) {
+    timeConf = flt;
+    if(DEBUG)
+      fprintf(stdout, DEBUG_TEXT_PUTS": timeConf: %f\n", timeConf);
+  }
+  else
+    fprintf(stderr, "No 'time' setting in configuration file.\n");
+
+  if(config_lookup_bool(&cfg, "debug", &bln))
+    DEBUG = bln;
+  else
+    fprintf(stderr, "No 'debug' setting in configuration file.\n");
+
+  config_destroy(&cfg);
+
+  if(isArgConf)
+    pUsingPath = &pArgPath;
+  else
+    pUsingPath = &pConfPath;
+
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": Loading images\n");
+
+  int fileOffset = 0;
+
+  if(hasCurrentDir)
+    fileOffset++;
+  if(hasParentDir)
+    fileOffset++;
+
+  // Loading Images to ImLib
+  Imlib_Image images[imgCount-fileOffset];
+  for(int temp = 0; temp < imgCount - fileOffset; temp++) {
+    char tempImgPath[MAX_PATH]; /* To concatenate dir path + image name */
+    images[temp] = imlib_load_image((*pUsingPath)[(fileOffset+temp)]);
+    if(DEBUG)
+      fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (*pUsingPath)[(fileOffset+temp)]);
+  }
+  if(DEBUG)
+    fprintf(stdout, "\n");
+  freeUsingPath();
+
+  // Loading the monitors, counting them and getting the resolution
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": Loading monitors\n");
+
+  Display *display = XOpenDisplay(NULL);
+  if (!display) {
+    fprintf(stderr, "Could not open XDisplay\n");
+    exit(42);
+  }
+
+  const int screen_count = ScreenCount(display);
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": Found %d screens\n", screen_count);
+
+  Monitor *monitors = malloc(sizeof(Monitor) * screen_count);
+  for(int current_screen = 0; current_screen < screen_count;
+      ++current_screen) {
+    if(DEBUG)
+      fprintf(stdout, DEBUG_TEXT_PUTS": Running screen %d\n", current_screen);
+
+    const int width  = DisplayWidth(display, current_screen);
+    const int height = DisplayHeight(display, current_screen);
+    const int depth  = DefaultDepth(display, current_screen);
+    Visual *vis      = DefaultVisual(display, current_screen);
+    const int cm     = DefaultColormap(display, current_screen);
+
+    if(DEBUG) {
+      fprintf(stdout, DEBUG_TEXT_PUTS": Screen %d: width: %d, height: %d, depth: %d\n",
+              current_screen, width, height, depth);
+    }
+
+    Window root = RootWindow(display, current_screen);
+    Pixmap pixmap = XCreatePixmap(display, root, width, height, depth);
+
+    monitors[current_screen].width          = width;
+    monitors[current_screen].height         = height;
+    monitors[current_screen].root           = root;
+    monitors[current_screen].pixmap         = pixmap;
+    monitors[current_screen].render_context = imlib_context_new();
+    imlib_context_push(monitors[current_screen].render_context);
+    imlib_context_set_display(display);
+    imlib_context_set_visual(vis);
+    imlib_context_set_colormap(cm);
+    imlib_context_set_drawable(pixmap);
+    imlib_context_set_color_range(imlib_create_color_range());
+    imlib_context_pop();
+  }
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": Loaded %d screens\n", screen_count);
+
+  /* Rendering the images on the screens found at the
+   * choosen time interval, forever                */
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": Starting render loop");
+
+  struct timespec timeout;
+  timeout.tv_sec  = 0;
+  timeout.tv_nsec = 70000000;
+
+  while(1) {
+    for(int cycle = 0; cycle < imgCount - fileOffset; ++cycle) {
+      Imlib_Image current = images[cycle % imgCount];
+      for(int monitor = 0; monitor < screen_count; ++monitor) {
+        Monitor *c_monitor = &monitors[monitor];
+        imlib_context_push(c_monitor->render_context);
+        imlib_context_set_dither(1);
+        imlib_context_set_blend(1);
+        imlib_context_set_image(current);
+
+        imlib_render_image_on_drawable(0, 0);
+
+        setRootAtoms(display, c_monitor);
+        XKillClient(display, AllTemporary);
+        XSetCloseDownMode(display, RetainTemporary);
+        XSetWindowBackgroundPixmap(display, c_monitor->root, c_monitor->pixmap);
+        XClearWindow(display, c_monitor->root);
+        XFlush(display);
+        XSync(display, False);
+        imlib_context_pop();
+      }
+
+      nanosleep(&timeout, NULL);
+    }
+  }
+}
+
+void help(void) {
   printf(                                                                               "\n"
          "XAWP - X11 Animated Wallpaper Player"                                         "\n"
          "Play animated wallpapers in X11 by passing XAWP a directory containing the"   "\n"
@@ -76,7 +354,7 @@ void help() {
         );
 }
 
-void version() {
+void version(void) {
   printf("XAWP version %s" /* version number */                                         "\n"
                                                                                         "\n"
          "Copyright (C) 2022 TheRealOne78"                                              "\n"
@@ -145,12 +423,12 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     case 0:
       pImgPath = &pConfPath;
       if(DEBUG)
-        fprintf(stdout, "DEBUG: Using \"%s\" from configuration file\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": Using \"%s\" from configuration file\n", *str);
       break;
     case 1:
       pImgPath = &pArgPath;
       if(DEBUG)
-        fprintf(stdout, "DEBUG: Using user arguments for configurations\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": Using user arguments for configurations\n", *str);
       break;
     default:
       fprintf(stderr, "Something went wrong: In function getImgPath(), choice is %d\n", choice);
@@ -177,7 +455,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
 
     /* Prints all the selected files */
     if(DEBUG) {
-      fprintf(stdout, "\nDEBUG: Selected files:\n");
+      fprintf(stdout, "\n"DEBUG_TEXT_PUTS": Selected files:\n");
       for(int i = 0; i < imgCount; i++)
         fprintf(stdout, "  | File %d: %s\n", i, (*pImgPath)[i]);
       fprintf  (stdout, "  | **End**\n\n");
@@ -191,7 +469,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     if(strcmp((*pImgPath)[0], tempImgPath1dot) == 0) {
       hasCurrentDir = true;
       if(DEBUG)
-        fprintf(stdout, "DEBUG: \"%s\" has current directory file, skipping it.\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s\" has current directory file, skipping it.\n", *str);
     }
     else
       hasCurrentDir = false;
@@ -202,10 +480,25 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     if(strcmp((*pImgPath)[1], tempImgPath2dot) == 0) {
       hasParentDir = true;
       if(DEBUG)
-        fprintf(stdout, "DEBUG: \"%s\" has parent directory file, skipping it.\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s\" has parent directory file, skipping it.\n", *str);
     }
     else
       hasParentDir = false;
+}
+
+void freeUsingPath(void) {
+  /* As the name says, this function frees all the
+   * allocated memory from the using image path */
+
+  for(int temp; temp < imgCount; temp++) {
+    if(DEBUG)
+      fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated address "KGRN"%p"RST" pointing to file index %d\n",
+              (*pUsingPath)[temp], temp);
+    free((*pUsingPath)[temp]);
+  }
+    if(DEBUG)
+      fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated dynamic array of images at address "KGRN"%p"RST"\n\n", (*pUsingPath));
+    free((*pUsingPath));
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {
@@ -323,237 +616,4 @@ void ImFit(char *sampleImg, int fitOpt) {
    *     exit(EXIT_FAILURE);
    *     break;
    * }                                                                                */
-}
-
-int main(int argc, char *argv[]) {
-  //TODO: DON'T FORGET TO free()!!!
-  char configTime[6];
-  configTime[0] = '\0';
-
-  // Do stuff with the arguments
-  static struct option long_options [] = {
-    { "help"     , no_argument      , NULL , 'h' },
-    { "time"     , required_argument, NULL , 't' },
-    { "version"  , no_argument      , NULL , 'v' },
-    { "debug"    , no_argument      , NULL , 'D' },
-    { "fit"      , required_argument, NULL , 'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
-    { "directory", required_argument, NULL , 'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
-    { "config"   , required_argument, NULL , 'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
-    { NULL       , 0                , NULL , 0   }
-  };
-
-  while(1) {
-    int c = getopt_long(argc, argv, "ht:vDf:d:c:", long_options, NULL);
-    /* Detect the end of the options. */
-    if (c == -1)
-      break;
-
-    switch (c) {
-      case 'D':
-        DEBUG = !DEBUG;
-        if(DEBUG==true)
-          fprintf(stdout, "Enabled debug\n");
-        break;
-
-      case 'h':
-        help();
-        exit(0);
-        break;
-
-      case 't':
-        snprintf(configTime, sizeof(configTime), "%s", optarg);
-        timeArg = atof(configTime);
-        break;
-
-      case 'f':
-        printf("Fit is not implemented yet, skipping...\n");
-        //TODO: implement this fit
-        break;
-
-      case 'd':
-        strcpy(pathArg, optarg);
-        getImgCount(&pathArg);
-        getImgPath (&pathArg, 1);
-        isArgConf = true;
-        break;
-
-      case 'c':
-        printf("Custom configuration file is not implemented yet, skipping...\n");
-        //TODO: implement this custom config file
-        char optArgPath[MAX_PATH];
-        strcpy(optArgPath, optarg);
-        break;
-
-      case 'v':
-        version();
-        exit(0);
-        break;
-
-      case '?':
-        /* No need to print and error message because
-           getopt_long did that already. */
-        exit(1);
-        break;
-
-      default:
-        abort();
-    }
-  }
-
-  double flt;
-  int bln;
-
-  config_t cfg;
-  config_setting_t *setting;
-  const char *str;
-  config_init(&cfg);
-
-  if(!isArgConf) {
-    strcpy(confPath, getenv("HOME"));
-    strcat(confPath, appendDefaultConfPath);
-  }
-
-  if(DEBUG)
-    fprintf(stdout, "DEBUG: xawp.conf path: \"%s\"\n", confPath);
-
-  // Read the file. If there is an error, report it and exit.
-  if(! config_read_file(&cfg, confPath)) {
-    fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
-           config_error_line(&cfg), config_error_text(&cfg));
-    config_destroy(&cfg);
-    return(EXIT_FAILURE);
-  }
-
-  if(!hasArgDir && config_lookup_string(&cfg, "path", &str)) {
-    strcpy(pathConf, str);
-    getImgCount(&pathConf); //conf=0, arg=1
-    getImgPath(&pathConf, 0);  //conf=0, arg=1
-  }
-  else
-    fprintf(stderr, "No 'path' setting in configuration file.\n");
-
-  if(!hasArgTime && config_lookup_float(&cfg, "time", &flt)) {
-    timeConf = flt;
-    if(DEBUG)
-      fprintf(stdout, "DEBUG: timeConf: %f\n", timeConf);
-  }
-  else
-    fprintf(stderr, "No 'time' setting in configuration file.\n");
-
-  if(config_lookup_bool(&cfg, "debug", &bln))
-    DEBUG = bln;
-  else
-    fprintf(stderr, "No 'debug' setting in configuration file.\n");
-
-  config_destroy(&cfg);
-
-  if(isArgConf)
-    pUsingPath = &pArgPath;
-  else
-    pUsingPath = &pConfPath;
-
-  if(DEBUG)
-    fprintf(stdout, "DEBUG: Loading images\n");
-
-  int fileOffset = 0;
-
-  if(hasCurrentDir)
-    fileOffset++;
-  if(hasParentDir)
-    fileOffset++;
-
-  // Loading Images to ImLib
-  Imlib_Image images[imgCount-fileOffset];
-  for(int temp = 0; temp < imgCount - fileOffset; temp++) {
-    char tempImgPath[MAX_PATH]; /* To concatenate dir path + image name */
-    images[temp] = imlib_load_image((*pUsingPath)[(fileOffset+temp)]);
-    if(DEBUG)
-      fprintf(stdout, "DEBUG: Imlib loaded %s\n", (*pUsingPath)[(fileOffset+temp)]);
-  }
-  //TODO: free()!!!!
-
-  // Loading the monitors, counting them and getting the resolution
-  if(DEBUG)
-    fprintf(stdout, "DEBUG: Loading monitors\n");
-
-  Display *display = XOpenDisplay(NULL);
-  if (!display) {
-    fprintf(stderr, "Could not open XDisplay\n");
-    exit(42);
-  }
-
-  const int screen_count = ScreenCount(display);
-  if(DEBUG)
-    fprintf(stdout, "DEBUG: Found %d screens\n", screen_count);
-
-  Monitor *monitors = malloc(sizeof(Monitor) * screen_count);
-  for(int current_screen = 0; current_screen < screen_count;
-      ++current_screen) {
-    if(DEBUG)
-      fprintf(stdout, "DEBUG: Running screen %d\n", current_screen);
-
-    const int width  = DisplayWidth(display, current_screen);
-    const int height = DisplayHeight(display, current_screen);
-    const int depth  = DefaultDepth(display, current_screen);
-    Visual *vis      = DefaultVisual(display, current_screen);
-    const int cm     = DefaultColormap(display, current_screen);
-
-    if(DEBUG) {
-      fprintf(stdout, "DEBUG: Screen %d: width: %d, height: %d, depth: %d\n",
-              current_screen, width, height, depth);
-    }
-
-    Window root = RootWindow(display, current_screen);
-    Pixmap pixmap = XCreatePixmap(display, root, width, height, depth);
-
-    monitors[current_screen].width          = width;
-    monitors[current_screen].height         = height;
-    monitors[current_screen].root           = root;
-    monitors[current_screen].pixmap         = pixmap;
-    monitors[current_screen].render_context = imlib_context_new();
-    imlib_context_push(monitors[current_screen].render_context);
-    imlib_context_set_display(display);
-    imlib_context_set_visual(vis);
-    imlib_context_set_colormap(cm);
-    imlib_context_set_drawable(pixmap);
-    imlib_context_set_color_range(imlib_create_color_range());
-    imlib_context_pop();
-  }
-  if(DEBUG)
-    fprintf(stdout, "DEBUG: Loaded %d screens\n", screen_count);
-
-  /* Rendering the images on the screens found at the
-   * choosen time interval, forever                */
-  if(DEBUG)
-    fprintf(stdout, "DEBUG: Starting render loop");
-
-  struct timespec timeout;
-  timeout.tv_sec  = 0;
-  timeout.tv_nsec = 70000000;
-
-  while(1) {
-    for(int cycle = 0; cycle < imgCount - fileOffset; ++cycle) {
-      Imlib_Image current = images[cycle % imgCount];
-      for(int monitor = 0; monitor < screen_count; ++monitor) {
-        Monitor *c_monitor = &monitors[monitor];
-        imlib_context_push(c_monitor->render_context);
-        imlib_context_set_dither(1);
-        imlib_context_set_blend(1);
-        imlib_context_set_image(current);
-
-        imlib_render_image_on_drawable(0, 0);
-
-        setRootAtoms(display, c_monitor);
-        XKillClient(display, AllTemporary);
-        XSetCloseDownMode(display, RetainTemporary);
-        XSetWindowBackgroundPixmap(display, c_monitor->root, c_monitor->pixmap);
-        XClearWindow(display, c_monitor->root);
-        XFlush(display);
-        XSync(display, False);
-        imlib_context_pop();
-      }
-
-      nanosleep(&timeout, NULL);
-    }
-  }
 }
