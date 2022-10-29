@@ -1,9 +1,11 @@
 #define _POSIX_C_SOURCE 199309L
 
-#define _DEBUG true
+#define _DEBUG false
 #define DEBUG_TEXT_PUTS "\x1B[34mDEBUG\x1B[0m"
 
 #define MAX_PATH 4096
+
+#define DEFAULT_FRAME_TIME 0.07
 
 #ifndef _COLORS_
   #define _COLORS_
@@ -48,11 +50,12 @@
 #include <libconfig.h>
 #include <dirent.h>
 #include <string.h>
+#include <math.h>
 
 // Basic constants
 const char author[] = "TheRealOne78";
 const char authorMail[] = "bajcsielias78@gmail.com";
-const char ver[] = "0.0.1";
+const char ver[] = "0.0.2";
 
 const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf"; /* This path will be concatenated with HOME envar */
 
@@ -66,21 +69,21 @@ char confPath[MAX_PATH]; /* path to configuration file */
 
 unsigned imgCount;       /* number of images */
 
-char **imgPath;        /* pointers to paths of images, from configuration file */
+char **imgPath;          /* pointers to paths of images, from configuration file */
 
-double timeConf;         /* time between frames, from configuration file */
-double timeArg;          /* time between frames, from user argument (not -c) */
+double frameTime = DEFAULT_FRAME_TIME; /* time between frames */ /* The time set is the default one */
 
-bool isArgConf = false;  /* If true, the configuration file from argument will be used */
+bool isArgConf = false;                /* If true, the configuration file from argument will be used */
 
-bool hasArgTime = false; /* If true, time from user argument will be used */
-bool hasArgDir = false;  /* If true, the directory will be used from user argument */
+bool hasArgTime = false;               /* If true, time from user argument will be used */
+bool hasArgDir = false;                /* If true, the directory will be used from user argument */
 
-bool usingStaticWallpaper = false; /* If true, XAWP will run only once to set a static wallpaper */ // Not fully implemented yet -  TODO
+bool usingStaticWallpaper = false;     /* If true, XAWP will run only once to set a static wallpaper */
+bool hasArgStaticWallpaper = false;    /* If true, it will be used the Static Wallpaper from user argument */
 
 /* Miscellaneous variables */
-bool hasCurrentDir = false; /* If true, the directory containing images has a current directory file: ./ */
-bool hasParentDir = false;  /* If true, the directory containing images has a parent directory file: ../ */
+bool hasCurrentDir = false;            /* If true, the directory containing images has a current directory file: ./ */
+bool hasParentDir = false;             /* If true, the directory containing images has a parent directory file: ../ */
 
 typedef struct {
   Window root;
@@ -131,7 +134,7 @@ int main(int argc, char *argv[]) {
 
       case 't':
         snprintf(configTime, sizeof(configTime), "%s", optarg);
-        timeArg = atof(configTime);
+        frameTime = atof(configTime);
         hasArgTime = true;
         break;
 
@@ -203,12 +206,12 @@ int main(int argc, char *argv[]) {
    * #->
    * #-> (end comments)                                           */
 
-  double flt;
-  int bln;
-
   config_t cfg;
   config_setting_t *setting;
-  const char *str;
+  const char *cfgStaticWallpaper;
+  const char *cfgPath;
+  double cfgTime;
+  int cfgDebug;
   config_init(&cfg);
 
   if(!isArgConf) {
@@ -227,28 +230,36 @@ int main(int argc, char *argv[]) {
     return(EXIT_FAILURE);
   }
 
+  if(!hasArgStaticWallpaper && config_lookup_string(&cfg, "static-wallpaper", &cfgStaticWallpaper)){
+    imgPath = (char**)malloc(1 * sizeof(char*));
+    imgPath[0] = (char*)malloc(MAX_PATH * sizeof(char));
+    strcpy(imgPath[0], cfgStaticWallpaper);
+    imgCount++;
+    usingStaticWallpaper = true;
+  }
+
   if(hasArgDir && !usingStaticWallpaper) {
     getImgCount(&pathArg);
     getImgPath(&pathArg, 1);
   }
-  else if(!hasArgDir && config_lookup_string(&cfg, "path", &str) && !usingStaticWallpaper) {
-    strcpy(pathConf, str);
+  else if(!hasArgDir && config_lookup_string(&cfg, "path", &cfgPath) && !usingStaticWallpaper) {
+    strcpy(pathConf, cfgPath);
     getImgCount(&pathConf); //conf=0, arg=1
     getImgPath(&pathConf, 0);  //conf=0, arg=1
   }
   else
     fprintf(stderr, "No 'path' setting in configuration file.\n");
 
-  if(!hasArgTime && config_lookup_float(&cfg, "time", &flt) && !usingStaticWallpaper) {
-    timeConf = flt;
+  if(!hasArgTime && config_lookup_float(&cfg, "time", &cfgTime) && !usingStaticWallpaper) {
+    frameTime = cfgTime;
     if(DEBUG)
-      fprintf(stdout, DEBUG_TEXT_PUTS": timeConf: %f\n", timeConf);
+      fprintf(stdout, DEBUG_TEXT_PUTS": frameTime: %lf\n", frameTime);
   }
   else
     fprintf(stderr, "No 'time' setting in configuration file.\n");
 
-  if(config_lookup_bool(&cfg, "debug", &bln))
-    DEBUG = bln;
+  if(config_lookup_bool(&cfg, "debug", &cfgDebug))
+    DEBUG = cfgDebug;
   else
     fprintf(stderr, "No 'debug' setting in configuration file.\n");
 
@@ -339,8 +350,11 @@ int main(int argc, char *argv[]) {
     fprintf(stdout, DEBUG_TEXT_PUTS": Starting render loop\n");
 
   struct timespec timeout;
-  timeout.tv_sec  = 0;
-  timeout.tv_nsec = 70000000;
+  double time_nsec_raw = frameTime;
+  if(time_nsec_raw > 1.0)
+    time_nsec_raw -= floor(time_nsec_raw);
+  timeout.tv_sec  = floor(frameTime);
+  timeout.tv_nsec = time_nsec_raw * 1e9;
 
   while(1) {
     for(int cycle = 0; cycle < imgCount - fileOffset; ++cycle) {
