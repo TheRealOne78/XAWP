@@ -68,7 +68,7 @@ unsigned imgCount;       /* number of images */
 
 char **pConfPath;        /* pointers to paths of images, from configuration file */
 char **pArgPath;         /* pointers to paths of images, from user argument (not -c) */
-char ***pUsingPath;      /* pointer to the using paths */
+char ***pUsingPath = &pConfPath; /* pointer to the using paths - TO BE REMOVED **TODO** */
 
 double timeConf;         /* time between frames, from configuration file */
 double timeArg;          /* time between frames, from user argument (not -c) */
@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
       case 't':
         snprintf(configTime, sizeof(configTime), "%s", optarg);
         timeArg = atof(configTime);
+        hasArgTime = true;
         break;
 
       case 'f':
@@ -148,14 +149,12 @@ int main(int argc, char *argv[]) {
         strcpy(pathArg, optarg);
         getImgCount(&pathArg);
         getImgPath (&pathArg, 1);
-        isArgConf = true;
+        hasArgDir = true;
         break;
 
       case 'c':
-        printf("Custom configuration file is not implemented yet, skipping...\n");
-        //TODO: implement this custom config file
-        char optArgPath[MAX_PATH];
-        strcpy(optArgPath, optarg);
+        strcpy(confPath, optarg);
+        isArgConf = true;
         break;
 
       case 'v':
@@ -173,6 +172,27 @@ int main(int argc, char *argv[]) {
         abort();
     }
   }
+  /* print XAWP color logo in ASCII art. Remove a single backslash '\' to see the real logo */
+  printf("\n"
+    KYEL" /$$   /$$"  KRED"  /$$$$$$ "  KMAG" /$$      /$$"  KBCYN" /$$$$$$$ "  RST"\n"
+    KYEL"| $$  / $$"  KRED" /$$__  $$"  KMAG"| $$  /$ | $$"  KBCYN"| $$__  $$"  RST"\n"
+    KYEL"|  $$/ $$/"  KRED"| $$  \\ $$"  KMAG"| $$ /$$$| $$"  KBCYN"| $$  \\ $$"  RST"\n"
+    KYEL" \\  $$$$/ "  KRED"| $$$$$$$$"  KMAG"| $$/$$ $$ $$"  KBCYN"| $$$$$$$/"  RST"\n"
+    KYEL"  >$$  $$ "  KRED"| $$__  $$"  KMAG"| $$$$_  $$$$"  KBCYN"| $$____/ "  RST"\n"
+    KYEL" /$$/\\  $$"  KRED"| $$  | $$"  KMAG"| $$$/ \\  $$$"  KBCYN"| $$      "  RST"\n"
+    KYEL"| $$  \\ $$"  KRED"| $$  | $$"  KMAG"| $$/   \\  $$"  KBCYN"| $$      "  RST"\n"
+    KYEL"|__/  |__/"  KRED"|__/  |__/"  KMAG"|__/     \\__/"  KBCYN"|__/      "  RST"\n"
+    KBWHT "X11 Animated Wallpaper Player v%s\n\n" RST, ver
+  );
+  /* ASCII art generated from patorjk.com/software/taag
+   *
+   * #-> bigmoney-ne : by nathan bloomfield (xzovik@gmail.com)
+   * #-> based on art from the legendary MAKEMONEYFAST chain letter
+   * #->
+   * #-> History:
+   * #->   5-30-2007 : first version (required characters only)
+   * #->
+   * #-> (end comments)                                           */
 
   double flt;
   int bln;
@@ -188,7 +208,7 @@ int main(int argc, char *argv[]) {
   }
 
   if(DEBUG)
-    fprintf(stdout, DEBUG_TEXT_PUTS": xawp.conf path: \"%s\"\n", confPath);
+    fprintf(stdout, DEBUG_TEXT_PUTS": configuration file path: \"%s\"\n", confPath);
 
   // Read the file. If there is an error, report it and exit.
   if(! config_read_file(&cfg, confPath)) {
@@ -198,7 +218,11 @@ int main(int argc, char *argv[]) {
     return(EXIT_FAILURE);
   }
 
-  if(!hasArgDir && config_lookup_string(&cfg, "path", &str)) {
+  if(hasArgDir) {
+    getImgCount(&pathArg);
+    getImgPath(&pathArg, 1);
+  }
+  else if(!hasArgDir && config_lookup_string(&cfg, "path", &str)) {
     strcpy(pathConf, str);
     getImgCount(&pathConf); //conf=0, arg=1
     getImgPath(&pathConf, 0);  //conf=0, arg=1
@@ -220,11 +244,6 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "No 'debug' setting in configuration file.\n");
 
   config_destroy(&cfg);
-
-  if(isArgConf)
-    pUsingPath = &pArgPath;
-  else
-    pUsingPath = &pConfPath;
 
   if(DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Loading images\n");

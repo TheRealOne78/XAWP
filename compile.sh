@@ -10,7 +10,7 @@ WARN="["$YELLOW"w"$ENDCOLOR"]"
 ERR="["$RED"e"$ENDCOLOR"]"
 
 #Compiling
-printf "$INFO Compiling with $(nproc) threads..."
+printf "$INFO Compiling with $(nproc) threads...\n"
 if [ -x "$(command -v pkg)" ]; then
   gmake -j$(nproc)
 # OpenBSD

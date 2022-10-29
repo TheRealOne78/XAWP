@@ -11,7 +11,7 @@ ERR="["$RED"e"$ENDCOLOR"]"
 
 # Check for root
 if [[ "$EUID" != 0 ]]; then
-  echo "Please run this script with super user permission!"
+  printf "$ERR Please run this script with super user permission!\n"
   exit 1
 fi
 

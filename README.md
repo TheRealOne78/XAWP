@@ -1,6 +1,6 @@
-<div style="text-align: center;">
+<p align="center">
   <img src="https://i.imgur.com/DxCHBP5.png" width="50%">
-</div>
+</p>
 
 # X11 Animated Wallpaper Player 
 X11 Animated Wallpaper Player - An X11 animated wallpaper player made to be easily configurable, be fast and work in compositors
@@ -11,10 +11,10 @@ Why use XAWP instead of paperview? You don't need SDL2 to run this, it can work 
 
 Why not just use AlecsFerra's animated_wallpaper.c?
 
-Unlike AlecsFerra's animated_wallpaper.c, XAWP can be installed more easily ~~and can be configured directly in $HOME/.config/XAWP/XAWP.conf instead of modifying the source code line by line.~~<br>
+Unlike AlecsFerra's animated_wallpaper.c, XAWP can be installed more easily and can be configured directly in $HOME/.config/XAWP/XAWP.conf instead of modifying the source code line by line.<br>
 For example, instead of adding the path of the wallpaper files in the source code, the user can add the path of folder containing the animated wallpaper picture frames with the following options:
 
-1. ~~by writing the directory into the configuration file~~
+1. by writing the directory into the configuration file
 2. or by appending to the command an argument to the directory
 
 
