@@ -15,13 +15,16 @@ $(BIN):
 # TODO: refactor this mess
 install:
 	install -t $(INSTALL_DIR) --owner=$(shell stat -c "%G" $(INSTALL_DIR)) --group=$(shell stat -c "%G" $(INSTALL_DIR)) -m 775 $(BUILD_DIR)$(BIN) # install $(COMPILE_DIR)$(BIN) in $(INSTALL_DIR)
+
+# TODO: refactor this mess
+install-config:
 	for f in /home/*/; do \
 		install -d --owner=$$(stat -c "%U" $$f) --group=$$(stat -c "%G" $$f) -m 755 "$$f$(CONF_DIR).." ; \
 		install -d --owner=$$(stat -c "%U" $$f) --group=$$(stat -c "%G" $$f) -m 755 "$$f$(CONF_DIR)" ; \
 		install -t "$$f$(CONF_DIR)" --owner=$$(stat -c "%U" $$f) --group=$$(stat -c "%G" $$f) -m 755 "$(CONF_DIR)$(CONF_FILE)" ; \
 	done
 
-all: $(BIN) install
+all: $(BIN) install install-config
 
 uninstall:
 	rm -f $(INSTALL_DIR)$(BIN)

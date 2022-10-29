@@ -66,9 +66,7 @@ char confPath[MAX_PATH]; /* path to configuration file */
 
 unsigned imgCount;       /* number of images */
 
-char **pConfPath;        /* pointers to paths of images, from configuration file */
-char **pArgPath;         /* pointers to paths of images, from user argument (not -c) */
-char ***pUsingPath = &pConfPath; /* pointer to the using paths - TO BE REMOVED **TODO** */
+char **imgPath;        /* pointers to paths of images, from configuration file */
 
 double timeConf;         /* time between frames, from configuration file */
 double timeArg;          /* time between frames, from user argument (not -c) */
@@ -77,6 +75,8 @@ bool isArgConf = false;  /* If true, the configuration file from argument will b
 
 bool hasArgTime = false; /* If true, time from user argument will be used */
 bool hasArgDir = false;  /* If true, the directory will be used from user argument */
+
+bool usingStaticWallpaper = false; /* If true, XAWP will run only once to set a static wallpaper */ // Not fully implemented yet -  TODO
 
 /* Miscellaneous variables */
 bool hasCurrentDir = false; /* If true, the directory containing images has a current directory file: ./ */
@@ -106,29 +106,24 @@ int main(int argc, char *argv[]) {
 
   // Do stuff with the arguments
   static struct option long_options [] = {
-    { "help"     , no_argument      , NULL , 'h' },
-    { "time"     , required_argument, NULL , 't' },
-    { "version"  , no_argument      , NULL , 'v' },
-    { "debug"    , no_argument      , NULL , 'D' },
-    { "fit"      , required_argument, NULL , 'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
-    { "directory", required_argument, NULL , 'd' }, // Not implemented yet - This will make the user prompt photos after the --directory/-d option
-    { "config"   , required_argument, NULL , 'c' }, // Not implemented yet - This will make the make the user prompt another config file than the default one
-    { NULL       , 0                , NULL , 0   }
+    { "help"                , no_argument      , NULL , 'h' },
+    { "time"                , required_argument, NULL , 't' },
+    { "version"             , no_argument      , NULL , 'v' },
+    { "debug"               , no_argument      , NULL , 'D' },
+    { "fit"                 , required_argument, NULL , 'f' }, // Not implemented yet - This is a feature that XAWP will fit the photo based on user's requirements
+    { "directory"           , required_argument, NULL , 'd' },
+    { "config"              , required_argument, NULL , 'c' },
+    { "set-static-wallpaper", required_argument, NULL , 'S' },
+    { NULL                  , 0                , NULL , 0   }
   };
 
   while(1) {
-    int c = getopt_long(argc, argv, "ht:vDf:d:c:", long_options, NULL);
+    int c = getopt_long(argc, argv, "ht:vDf:d:c:S:", long_options, NULL);
     /* Detect the end of the options. */
     if (c == -1)
       break;
 
     switch (c) {
-      case 'D':
-        DEBUG = !DEBUG;
-        if(DEBUG==true)
-          fprintf(stdout, "Enabled debug\n");
-        break;
-
       case 'h':
         help();
         exit(0);
@@ -138,6 +133,17 @@ int main(int argc, char *argv[]) {
         snprintf(configTime, sizeof(configTime), "%s", optarg);
         timeArg = atof(configTime);
         hasArgTime = true;
+        break;
+
+      case 'v':
+        version();
+        exit(0);
+        break;
+
+      case 'D':
+        DEBUG = !DEBUG;
+        if(DEBUG==true)
+          fprintf(stdout, "Enabled debug\n");
         break;
 
       case 'f':
@@ -157,9 +163,12 @@ int main(int argc, char *argv[]) {
         isArgConf = true;
         break;
 
-      case 'v':
-        version();
-        exit(0);
+      case 'S':
+        imgPath = (char**)malloc(1 * sizeof(char*));
+        imgPath[0] = (char*)malloc(MAX_PATH * sizeof(char));
+        strcpy(imgPath[0], optarg);
+        imgCount++;
+        usingStaticWallpaper = true;
         break;
 
       case '?':
@@ -218,11 +227,11 @@ int main(int argc, char *argv[]) {
     return(EXIT_FAILURE);
   }
 
-  if(hasArgDir) {
+  if(hasArgDir && !usingStaticWallpaper) {
     getImgCount(&pathArg);
     getImgPath(&pathArg, 1);
   }
-  else if(!hasArgDir && config_lookup_string(&cfg, "path", &str)) {
+  else if(!hasArgDir && config_lookup_string(&cfg, "path", &str) && !usingStaticWallpaper) {
     strcpy(pathConf, str);
     getImgCount(&pathConf); //conf=0, arg=1
     getImgPath(&pathConf, 0);  //conf=0, arg=1
@@ -230,7 +239,7 @@ int main(int argc, char *argv[]) {
   else
     fprintf(stderr, "No 'path' setting in configuration file.\n");
 
-  if(!hasArgTime && config_lookup_float(&cfg, "time", &flt)) {
+  if(!hasArgTime && config_lookup_float(&cfg, "time", &flt) && !usingStaticWallpaper) {
     timeConf = flt;
     if(DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": timeConf: %f\n", timeConf);
@@ -257,14 +266,21 @@ int main(int argc, char *argv[]) {
 
   // Loading Images to ImLib
   Imlib_Image images[imgCount-fileOffset];
-  for(int temp = 0; temp < imgCount - fileOffset; temp++) {
-    char tempImgPath[MAX_PATH]; /* To concatenate dir path + image name */
-    images[temp] = imlib_load_image((*pUsingPath)[(fileOffset+temp)]);
+  if(!usingStaticWallpaper) {
+    for(int temp = 0; temp < imgCount - fileOffset; temp++) {
+      char tempImgPath[MAX_PATH]; /* To concatenate dir path + image name */
+      images[temp] = imlib_load_image(imgPath[(fileOffset+temp)]);
+      if(DEBUG)
+        fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (imgPath)[(fileOffset+temp)]);
+    }
     if(DEBUG)
-      fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (*pUsingPath)[(fileOffset+temp)]);
+      fprintf(stdout, "\n");
   }
-  if(DEBUG)
-    fprintf(stdout, "\n");
+  else {
+    images[0] = imlib_load_image((imgPath)[0]);
+    if(DEBUG)
+      fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (imgPath)[0]);
+  }
   freeUsingPath();
 
   // Loading the monitors, counting them and getting the resolution
@@ -320,7 +336,7 @@ int main(int argc, char *argv[]) {
   /* Rendering the images on the screens found at the
    * choosen time interval, forever                */
   if(DEBUG)
-    fprintf(stdout, DEBUG_TEXT_PUTS": Starting render loop");
+    fprintf(stdout, DEBUG_TEXT_PUTS": Starting render loop\n");
 
   struct timespec timeout;
   timeout.tv_sec  = 0;
@@ -347,6 +363,11 @@ int main(int argc, char *argv[]) {
         XSync(display, False);
         imlib_context_pop();
       }
+      if(usingStaticWallpaper) {
+        if(DEBUG)
+          fprintf(stdout, DEBUG_TEXT_PUTS": Using static wallpaper detected, exiting...");
+        exit(EXIT_SUCCESS);
+      }
 
       nanosleep(&timeout, NULL);
     }
@@ -354,33 +375,45 @@ int main(int argc, char *argv[]) {
 }
 
 void help(void) {
-  printf(                                                                               "\n"
-         "XAWP - X11 Animated Wallpaper Player"                                         "\n"
-         "Play animated wallpapers in X11 by passing XAWP a directory containing the"   "\n"
-         "pictures frames wanted to be displayed."                                      "\n"
-                                                                                        "\n"
-         "Usage: [options] images_path"                                                 "\n"
-                                                                                        "\n"
-         "Options:"                                                                     "\n"
-         "-h, --help \t Output this help list and exit"                                 "\n"
-         "-t, --time \t Set the time XAWP needs to wait between the"                    "\n"
-         "\t\t change of images: --time seconds.milliseconds"                           "\n"
-         "-v, --version \t Output version information and license and exit"             "\n"
-         "-D, --debug \t Output the debug log"                                          "\n"
-                                                                                        "\n"
-         "Note that XAWP uses a lot of resources like RAM and CPU!"                     "\n"
-                                                                                        "\n"
-        );
+  printf(                                                                                 "\n"
+         "XAWP - X11 Animated Wallpaper Player"                                           "\n"
+         "Play animated wallpapers in X11 by passing XAWP a directory containing the"     "\n"
+         "pictures frames wanted to be displayed."                                        "\n"
+                                                                                          "\n"
+         "Usage: [options] images_path"                                                   "\n"
+                                                                                          "\n"
+         "Options:"                                                                       "\n"
+         "-h, --help\t\t\t"              "Output this help list and exit"                 "\n"
+                                                                                          "\n"
+         "-t, --time\t\t\t"              "Set the time XAWP needs to wait between the"    "\n"
+         "\t\t\t\t"                      "change of images: --time seconds.milliseconds"  "\n"
+                                                                                          "\n"
+         "-v, --version\t\t\t"           "Output version information and license and exit""\n"
+                                                                                          "\n"
+         "-D, --debug\t\t\t"             "Output the debug log"                           "\n"
+                                                                                          "\n"
+         "-d, --directory\t\t\t"         "Set directory containing animation frames:"     "\n"
+         "\t\t\t\t"                      "--directory "KBWHT"/home/foo/wallgif/"RST       "\n"
+         "\t\t\t\t"                      "The last backslash '\\' is required!"           "\n"
+                                                                                          "\n"
+         "-c, --config\t\t\t"            "Set another configuration file than the default""\n"
+         "\t\t\t\t"                 KBWHT"%s/.config/xawp/xawp.conf"RST" configuration file\n"
+                                                                                          "\n"
+         "-S, --set-static-wallpaper\t"  "Set a static wallpaper and exit"                "\n"
+                                                                                          "\n"
+         "Note that XAWP uses a lot of system resources like RAM and CPU!"                "\n"
+                                                                                          "\n"
+        , getenv("HOME"));
 }
 
 void version(void) {
-  printf("XAWP version %s" /* version number */                                         "\n"
-                                                                                        "\n"
-         "Copyright (C) 2022 TheRealOne78"                                              "\n"
-         "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\n"
-         "This is free software: you are free to change and redistribute it."           "\n"
-         "There is NO WARRANTY, to the extent permitted by law."                        "\n"
-                                                                                        "\n"
+  printf("XAWP version %s" /* version number */                                           "\n"
+                                                                                          "\n"
+         "Copyright (C) 2022 TheRealOne78"                                                "\n"
+         "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.""\n"
+         "This is free software: you are free to change and redistribute it."             "\n"
+         "There is NO WARRANTY, to the extent permitted by law."                          "\n"
+                                                                                          "\n"
         , ver);
 }
 
@@ -436,25 +469,17 @@ void getImgPath(char str[][MAX_PATH], int choice) {
    * statements are used to know if the first 1-2 files
    * are or not . and ..                                  */
 
-  char ***pImgPath;
-
-  switch(choice) {
-    case 0:
-      pImgPath = &pConfPath;
-      if(DEBUG)
+  if(DEBUG) {
+    switch(choice) {
+      case 0:
         fprintf(stdout, DEBUG_TEXT_PUTS": Using \"%s\" from configuration file\n", *str);
-      break;
-    case 1:
-      pImgPath = &pArgPath;
-      if(DEBUG)
+        break;
+      case 1:
         fprintf(stdout, DEBUG_TEXT_PUTS": Using user arguments for configurations\n", *str);
-      break;
-    default:
-      fprintf(stderr, "Something went wrong: In function getImgPath(), choice is %d\n", choice);
-      exit(EXIT_FAILURE);
-      break;
+        break;
+    }
   }
-  *pImgPath = (char**)malloc(imgCount * sizeof(char*));
+  imgPath = (char**)malloc(imgCount * sizeof(char*));
 
   DIR *d;
   struct dirent *dir;
@@ -463,20 +488,20 @@ void getImgPath(char str[][MAX_PATH], int choice) {
   int temp = 0;
   if (d) {
     while ((dir = readdir(d)) != NULL) {
-      (*pImgPath)[temp] = (char*)malloc(MAX_PATH * sizeof(char));
-      strcpy((*pImgPath)[temp], *str);
-      strcat((*pImgPath)[temp++], dir->d_name);
+      (imgPath)[temp] = (char*)malloc(MAX_PATH * sizeof(char));
+      strcpy((imgPath)[temp], *str);
+      strcat((imgPath)[temp++], dir->d_name);
     }
     closedir(d);
   }
     /* readdir() dumps mixed files, so qsort will sort alphabetically */
-    qsort(*pImgPath, imgCount, sizeof((*pImgPath)[0]), compare_fun);
+    qsort(imgPath, imgCount, sizeof((imgPath)[0]), compare_fun);
 
     /* Prints all the selected files */
     if(DEBUG) {
       fprintf(stdout, "\n"DEBUG_TEXT_PUTS": Selected files:\n");
       for(int i = 0; i < imgCount; i++)
-        fprintf(stdout, "  | File %d: %s\n", i, (*pImgPath)[i]);
+        fprintf(stdout, "  | File %d: %s\n", i, (imgPath)[i]);
       fprintf  (stdout, "  | **End**\n\n");
     }
 
@@ -485,7 +510,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     char tempImgPath1dot[MAX_PATH];
     strcpy(tempImgPath1dot, *str);
     strcat(tempImgPath1dot, ".");
-    if(strcmp((*pImgPath)[0], tempImgPath1dot) == 0) {
+    if(strcmp((imgPath)[0], tempImgPath1dot) == 0) {
       hasCurrentDir = true;
       if(DEBUG)
         fprintf(stdout, DEBUG_TEXT_PUTS": \"%s\" has current directory file, skipping it.\n", *str);
@@ -496,7 +521,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     char tempImgPath2dot[MAX_PATH];
     strcpy(tempImgPath2dot, *str);
     strcat(tempImgPath2dot, "..");
-    if(strcmp((*pImgPath)[1], tempImgPath2dot) == 0) {
+    if(strcmp((imgPath)[1], tempImgPath2dot) == 0) {
       hasParentDir = true;
       if(DEBUG)
         fprintf(stdout, DEBUG_TEXT_PUTS": \"%s\" has parent directory file, skipping it.\n", *str);
@@ -512,12 +537,12 @@ void freeUsingPath(void) {
   for(int temp; temp < imgCount; temp++) {
     if(DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated address "KGRN"%p"RST" pointing to file index %d\n",
-              (*pUsingPath)[temp], temp);
-    free((*pUsingPath)[temp]);
+              (imgPath)[temp], temp);
+    free((imgPath)[temp]);
   }
     if(DEBUG)
-      fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated dynamic array of images at address "KGRN"%p"RST"\n\n", (*pUsingPath));
-    free((*pUsingPath));
+      fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated dynamic array of images at address "KGRN"%p"RST"\n\n", (imgPath));
+    free((imgPath));
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {
