@@ -1,27 +1,36 @@
-LDFLAGS = -lX11 -lImlib2
+LDFLAGS = -lX11 -lImlib2 -lconfig -lm
 CC = gcc
 CFLAGS = -O2
-SRC = src/main.c
+SRC = ./src/*.c
 BIN = xawp
-DESTDIR = build/
-INSTALLDIR = /usr/bin/
+BUILD_DIR = ./build/
+CONF_DIR = ./.config/xawp/
+INSTALL_DIR = /usr/bin/
+CONF_FILE = xawp.conf
 
 $(BIN):
-	mkdir -p $(DESTDIR)
-	 $(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(DESTDIR)$(BIN)
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(SRC) $(LDFLAGS) -o $(BUILD_DIR)$(BIN)
 
+# TODO: refactor this mess
 install:
-	mkdir -p $(DESTDIR)
-	cp -f $(DESTDIR)$(BIN) $(INSTALLDIR)
-	chmod 755 $(INSTALLDIR)$(BIN)
+	install -t $(INSTALL_DIR) --owner=$(shell stat -c "%G" $(INSTALL_DIR)) --group=$(shell stat -c "%G" $(INSTALL_DIR)) -m 775 $(BUILD_DIR)$(BIN) # install $(COMPILE_DIR)$(BIN) in $(INSTALL_DIR)
 
-all: $(BIN) install
+# TODO: refactor this mess
+install-config:
+	for f in /home/*/; do \
+		install -d --owner=$$(stat -c "%U" $$f) --group=$$(stat -c "%G" $$f) -m 755 "$$f$(CONF_DIR).." ; \
+		install -d --owner=$$(stat -c "%U" $$f) --group=$$(stat -c "%G" $$f) -m 755 "$$f$(CONF_DIR)" ; \
+		install -t "$$f$(CONF_DIR)" --owner=$$(stat -c "%U" $$f) --group=$$(stat -c "%G" $$f) -m 755 "$(CONF_DIR)$(CONF_FILE)" ; \
+	done
+
+all: $(BIN) install install-config
 
 uninstall:
-	rm -f $(INSTALLDIR)$(BIN)
+	rm -f $(INSTALL_DIR)$(BIN)
 
 TESTDIR = test/
-test: $(BIN) 
-	$(DESTDIR)$(BIN)
+test: $(BIN)
+	$(BUILD_DIR)$(BIN)
 
 .PHONY: all install uninstall
