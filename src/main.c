@@ -145,8 +145,8 @@ int main(int argc, char *argv[]) {
 
       case 'D':
         DEBUG = !DEBUG;
-        if(DEBUG==true)
-          fprintf(stdout, "Enabled debug\n");
+        if(DEBUG)
+          fprintf(stdout, DEBUG_TEXT_PUTS": Enabled debug\n");
         break;
 
       case 'f':
@@ -184,7 +184,8 @@ int main(int argc, char *argv[]) {
         abort();
     }
   }
-  /* print XAWP color logo in ASCII art. Remove a single backslash '\' to see the real logo */
+  /* print XAWP color logo in ASCII art. Remove a single backslash '\' from each '\\'
+   * to see the real logo                                                              */
   printf("\n"
     KYEL" /$$   /$$"  KRED"  /$$$$$$ "  KMAG" /$$      /$$"  KBCYN" /$$$$$$$ "  RST"\n"
     KYEL"| $$  / $$"  KRED" /$$__  $$"  KMAG"| $$  /$ | $$"  KBCYN"| $$__  $$"  RST"\n"
@@ -230,6 +231,13 @@ int main(int argc, char *argv[]) {
     return(EXIT_FAILURE);
   }
 
+  if(config_lookup_bool(&cfg, "debug", &cfgDebug))
+    DEBUG = cfgDebug;
+  else
+    fprintf(stderr, "No 'debug' setting in configuration file.\n");
+  if(DEBUG)
+    fprintf(stdout, DEBUG_TEXT_PUTS": Enabled debug\n");
+
   if(!hasArgStaticWallpaper && config_lookup_string(&cfg, "static-wallpaper", &cfgStaticWallpaper)){
     imgPath = (char**)malloc(1 * sizeof(char*));
     imgPath[0] = (char*)malloc(MAX_PATH * sizeof(char));
@@ -258,11 +266,6 @@ int main(int argc, char *argv[]) {
   else
     fprintf(stderr, "No 'time' setting in configuration file.\n");
 
-  if(config_lookup_bool(&cfg, "debug", &cfgDebug))
-    DEBUG = cfgDebug;
-  else
-    fprintf(stderr, "No 'debug' setting in configuration file.\n");
-
   config_destroy(&cfg);
 
   if(DEBUG)
@@ -279,7 +282,6 @@ int main(int argc, char *argv[]) {
   Imlib_Image images[imgCount-fileOffset];
   if(!usingStaticWallpaper) {
     for(int temp = 0; temp < imgCount - fileOffset; temp++) {
-      char tempImgPath[MAX_PATH]; /* To concatenate dir path + image name */
       images[temp] = imlib_load_image(imgPath[(fileOffset+temp)]);
       if(DEBUG)
         fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (imgPath)[(fileOffset+temp)]);
@@ -379,7 +381,7 @@ int main(int argc, char *argv[]) {
       }
       if(usingStaticWallpaper) {
         if(DEBUG)
-          fprintf(stdout, DEBUG_TEXT_PUTS": Using static wallpaper detected, exiting...");
+          fprintf(stdout, DEBUG_TEXT_PUTS": Using static wallpaper detected, exiting...\n");
         exit(EXIT_SUCCESS);
       }
 
@@ -501,9 +503,14 @@ void getImgPath(char str[][MAX_PATH], int choice) {
   d = opendir(*str);
   int temp = 0;
   if (d) {
+    bool notEndingWithSlash;
+    if(*str[strlen(*str)] != '/') /* Check to see if path is not ending with '/' */
+      notEndingWithSlash = true;
     while ((dir = readdir(d)) != NULL) {
       (imgPath)[temp] = (char*)malloc(MAX_PATH * sizeof(char));
       strcpy((imgPath)[temp], *str);
+      if(notEndingWithSlash) /* Add "/" to frame path if the dir path doesn't end with "/" */
+        strcat((imgPath)[temp], "/");
       strcat((imgPath)[temp++], dir->d_name);
     }
     closedir(d);
@@ -523,22 +530,22 @@ void getImgPath(char str[][MAX_PATH], int choice) {
      * in order to know where the actual images start     */
     char tempImgPath1dot[MAX_PATH];
     strcpy(tempImgPath1dot, *str);
-    strcat(tempImgPath1dot, ".");
+    strcat(tempImgPath1dot, "/.");
     if(strcmp((imgPath)[0], tempImgPath1dot) == 0) {
       hasCurrentDir = true;
       if(DEBUG)
-        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s\" has current directory file, skipping it.\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s/\" has current directory file, skipping it.\n", *str);
     }
     else
       hasCurrentDir = false;
 
     char tempImgPath2dot[MAX_PATH];
     strcpy(tempImgPath2dot, *str);
-    strcat(tempImgPath2dot, "..");
+    strcat(tempImgPath2dot, "/..");
     if(strcmp((imgPath)[1], tempImgPath2dot) == 0) {
       hasParentDir = true;
       if(DEBUG)
-        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s\" has parent directory file, skipping it.\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s/\" has parent directory file, skipping it.\n", *str);
     }
     else
       hasParentDir = false;
