@@ -410,7 +410,6 @@ void help(void) {
                                                                                           "\n"
          "-d, --directory\t\t\t"         "Set directory containing animation frames:"     "\n"
          "\t\t\t\t"                      "--directory "KBWHT"/home/foo/wallgif/"RST       "\n"
-         "\t\t\t\t"                      "The last backslash '\\' is required!"           "\n"
                                                                                           "\n"
          "-c, --config\t\t\t"            "Set another configuration file than the default""\n"
          "\t\t\t\t"                 KBWHT"%s/.config/xawp/xawp.conf"RST" configuration file\n"
