@@ -6,6 +6,7 @@
 #define MAX_PATH 4096
 
 #define DEFAULT_FRAME_TIME 0.07
+#define DEFAULT_FIT_OPTION "fit"
 
 #ifndef _COLORS_
   #define _COLORS_
@@ -51,6 +52,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
 
 // Basic constants
 const char author[] = "TheRealOne78";
@@ -71,15 +73,20 @@ unsigned imgCount;       /* number of images */
 
 char **imgPath;          /* pointers to paths of images, from configuration file */
 
-double frameTime = DEFAULT_FRAME_TIME; /* time between frames */ /* The time set is the default one */
+double frameTime = DEFAULT_FRAME_TIME;     /* time between frames */ /* The time set is the default one */
 
-bool isArgConf = false;                /* If true, the configuration file from argument will be used */
+bool isArgConf = false;                    /* If true, the configuration file from argument will be used */
 
-bool hasArgTime = false;               /* If true, time from user argument will be used */
-bool hasArgDir = false;                /* If true, the directory will be used from user argument */
+bool hasArgTime = false;                   /* If true, time from user argument will be used */
+bool hasArgDir = false;                    /* If true, the directory will be used from user argument */
 
-bool usingStaticWallpaper = false;     /* If true, XAWP will run only once to set a static wallpaper */
-bool hasArgStaticWallpaper = false;    /* If true, it will be used the Static Wallpaper from user argument */
+bool usingStaticWallpaper = false;         /* If true, XAWP will run only once to set a static wallpaper */
+bool hasArgStaticWallpaper = false;        /* If true, it will be used the Static Wallpaper from user argument */
+
+bool hasArgFit = false;                    /* If true, the fit option from user argument will be used - Order 0 */
+bool hasConfFit = false;                   /* If true, the fit option from configuration file will be used - Order 1 */
+char defaultFitOpt[] = DEFAULT_FIT_OPTION; /* Default Fit Option - Order 2 */
+char *fitOpt;                              /* The final fit option */
 
 /* Miscellaneous variables */
 bool hasCurrentDir = false;            /* If true, the directory containing images has a current directory file: ./ */
@@ -100,7 +107,7 @@ void getImgPath(char str[][MAX_PATH], int choice);
 static int compare_fun (const void *p, const void *q);
 void freeUsingPath(void);
 void setRootAtoms(Display *display, Monitor *monitor);
-void ImFit(char *sampleImg, int fitOpt);
+void ImFit(Imlib_Image *image[]);
 
 
 int main(int argc, char *argv[]) {
@@ -153,6 +160,9 @@ int main(int argc, char *argv[]) {
         printf("Fit is not implemented yet, skipping...\n");
         //TODO: implement this fit
         break;
+        strcpy(fitOpt, optarg);
+        hasArgFit = true;
+        break;
 
       case 'd':
         strcpy(pathArg, optarg);
@@ -186,17 +196,22 @@ int main(int argc, char *argv[]) {
   }
   /* print XAWP color logo in ASCII art. Remove a single backslash '\' from each '\\'
    * to see the real logo                                                              */
-  printf("\n"
-    KYEL" /$$   /$$"  KRED"  /$$$$$$ "  KMAG" /$$      /$$"  KBCYN" /$$$$$$$ "  RST"\n"
-    KYEL"| $$  / $$"  KRED" /$$__  $$"  KMAG"| $$  /$ | $$"  KBCYN"| $$__  $$"  RST"\n"
-    KYEL"|  $$/ $$/"  KRED"| $$  \\ $$"  KMAG"| $$ /$$$| $$"  KBCYN"| $$  \\ $$"  RST"\n"
-    KYEL" \\  $$$$/ "  KRED"| $$$$$$$$"  KMAG"| $$/$$ $$ $$"  KBCYN"| $$$$$$$/"  RST"\n"
-    KYEL"  >$$  $$ "  KRED"| $$__  $$"  KMAG"| $$$$_  $$$$"  KBCYN"| $$____/ "  RST"\n"
-    KYEL" /$$/\\  $$"  KRED"| $$  | $$"  KMAG"| $$$/ \\  $$$"  KBCYN"| $$      "  RST"\n"
-    KYEL"| $$  \\ $$"  KRED"| $$  | $$"  KMAG"| $$/   \\  $$"  KBCYN"| $$      "  RST"\n"
-    KYEL"|__/  |__/"  KRED"|__/  |__/"  KMAG"|__/     \\__/"  KBCYN"|__/      "  RST"\n"
-    KBWHT "X11 Animated Wallpaper Player v%s\n\n" RST, ver
-  );
+  if(system("[[ -x \"$(command -v lolcat)\" ]]") == 0) {
+    system("printf \" /\\$\\$   /\\$\\$  /\\$\\$\\$\\$\\$\\$  /\\$\\$      /\\$\\$ /\\$\\$\\$\\$\\$\\$\\$\\n| \\$\\$  / \\$\\$ /\\$\\$__  \\$\\$| \\$\\$  /\\$ | \\$\\$| \\$\\$__  \\$\\$\\n|  \\$\\$/ \\$\\$/| \\$\\$  \\ \\$\\$| \\$\\$ /\\$\\$\\$| \\$\\$| \\$\\$  \\ \\$\\$\\n \\  \\$\\$\\$\\$/ | \\$\\$\\$\\$\\$\\$\\$\\$| \\$\\$/\\$\\$ \\$\\$ \\$\\$| \\$\\$\\$\\$\\$\\$\\$\\n  >\\$\\$  \\$\\$ | \\$\\$__  \\$\\$| \\$\\$\\$\\$_  \\$\\$\\$\\$| \\$\\$____/\\n /\\$\\$/\\  \\$\\$| \\$\\$  | \\$\\$| \\$\\$\\$/ \\  \\$\\$\\$| \\$\\$      \\n| \\$\\$  \\ \\$\\$| \\$\\$  | \\$\\$| \\$\\$/   \\  \\$\\$| \\$\\$      \\n|__/  |__/|__/  |__/|__/     \\__/|__/      \\n\" | lolcat");
+  }
+  else {
+    printf("\n" /* ==print logo== */
+      KYEL" /$$   /$$"  KRED"  /$$$$$$ "  KMAG" /$$      /$$"  KBCYN" /$$$$$$$ "  RST"\n"
+      KYEL"| $$  / $$"  KRED" /$$__  $$"  KMAG"| $$  /$ | $$"  KBCYN"| $$__  $$"  RST"\n"
+      KYEL"|  $$/ $$/"  KRED"| $$  \\ $$"  KMAG"| $$ /$$$| $$"  KBCYN"| $$  \\ $$"  RST"\n"
+      KYEL" \\  $$$$/ "  KRED"| $$$$$$$$"  KMAG"| $$/$$ $$ $$"  KBCYN"| $$$$$$$/"  RST"\n"
+      KYEL"  >$$  $$ "  KRED"| $$__  $$"  KMAG"| $$$$_  $$$$"  KBCYN"| $$____/ "  RST"\n"
+      KYEL" /$$/\\  $$"  KRED"| $$  | $$"  KMAG"| $$$/ \\  $$$"  KBCYN"| $$      "  RST"\n"
+      KYEL"| $$  \\ $$"  KRED"| $$  | $$"  KMAG"| $$/   \\  $$"  KBCYN"| $$      "  RST"\n"
+      KYEL"|__/  |__/"  KRED"|__/  |__/"  KMAG"|__/     \\__/"  KBCYN"|__/      "  RST"\n"
+    );
+  }
+  printf(KBWHT "X11 Animated Wallpaper Player v%s\n\n" RST, ver);
   /* ASCII art generated from patorjk.com/software/taag
    *
    * #-> bigmoney-ne : by nathan bloomfield (xzovik@gmail.com)
@@ -213,6 +228,7 @@ int main(int argc, char *argv[]) {
   const char *cfgPath;
   double cfgTime;
   int cfgDebug;
+  int cfgFit;
   config_init(&cfg);
 
   if(!isArgConf) {
@@ -265,6 +281,10 @@ int main(int argc, char *argv[]) {
   }
   else
     fprintf(stderr, "No 'time' setting in configuration file.\n");
+
+  if(config_lookup_bool(&cfg, "fit", &cfgFit) && !hasArgFit && !usingStaticWallpaper) {
+    hasConfFit = cfgFit;
+  }
 
   config_destroy(&cfg);
 
@@ -522,7 +542,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
       fprintf(stdout, "\n"DEBUG_TEXT_PUTS": Selected files:\n");
       for(int i = 0; i < imgCount; i++)
         fprintf(stdout, "  | File %d: %s\n", i, (imgPath)[i]);
-      fprintf  (stdout, "  | **End**\n\n");
+      fprintf  (stdout, "  | ** End of files **\n\n");
     }
 
     /* Now check if there are any "." and ".." files in path
@@ -604,80 +624,74 @@ void setRootAtoms(Display *display, Monitor *monitor) {
                   PropModeReplace, (unsigned char *)&monitor->pixmap, 1);
 }
 
-void ImFit(char *sampleImg, int fitOpt) {
+void ImFit(Imlib_Image *image[]) {
   /* This function is responsible for fitting the image when rendering depending
    * in user's arguments.
    *
-   * This function gets passed 2 variables, a char pointer to the first image and
-   * a int which tells how the image should fit
-   * For example, if the int is 0 or NULL it will fit fullscreen or if fitOpt is 2,
-   * the image will be rendered in the center of the screen.
+   * This function gets passed a pointer to the Imlib images and uses a global char*
+   * variable "fitOpt", which has the fit option.
    *
-   * Right now, the available fit options are the following[0-6]:
+   * Right now, the available fit options are the following:
+   *   * FULLSCREEN,
+   *   * FULLSCREEN CROPPED,
+   *   * CENTERED,
+   *   * TOP-LEFT,
+   *   * BOTTOM-LEFT,
+   *   * BOTTOM-RIGHT,
+   *   * TOP-RIGHT.
+   * Despite these being written with uppercase letters, the fitOpt is not case
+   * sensitive.
    *
-   *  ─────┬────────────────────
-   *   Opt │ Fit name
-   *  ─────┼────────────────────
-   *   0   │ Fullscreen
-   *       │
-   *   1   │ Fullscreen Cropped
-   *       │
-   *   2   │ Centered
-   *       │
-   *   3   │ Left-up Corner
-   *       │
-   *   4   │ Left-down Corner
-   *       │
-   *   5   │ Right-down Corner
-   *       │
-   *   6   │ Right-up Corner
-   *
-   * The image passed through the char pointer will be analized for determining it's
-   * width and height.
-   *
-   * The reason this function analyzes only the first image is because analyzing every
-   * single image would be redundant, loosing a lot of time and CPU free usage. XAWP
-   * is not supposed to run different width and height images, just the original coalesce
-   * There is an exception however where all the images will suffer modifications       */
+   * ImFit() will also modify the loaded Imlib images based on fitOpt.
+   */
 
-  /* This function is still a TODO and this is it's pseudo-code:
-   * int fitOptLimit = 6;
-   * int imWidth = Imlib_get_image_width(*sampleImg);
-   * int imHeight = Imlib_get_image_height(*sampleImg);
-   * switch(fitOpt) {
-   *   case 0:
-   *     Scale image based on width and height;
-   *     return position;
-   *     break;
-   *   case 1:
-   *     pass images to crop function image based on width and height since the images
-   *     will suffer modifications;
-   *     return position;
-   *     break;
-   *   case 2:
-   *     Determine the center of the image and XScreen's width and height and then
-   *     determine where the position should start from with that info;
-   *     break;
-   *   case 3:
-   *     Return the position as 0,0 since no modifications are needed;
-   *     break;
-   *   case 4:
-   *     Determine XScreen's height;
-   *     Return position as (Xscreen height - img height),0;
-   *     break;
-   *   case 5:
-   *     Determine XScreen's width and height
-   *     Return position as (XScreen height - img height),(XScreen width - img width);
-   *     break;
-   *   case 6:
-   *     Determine XScreen's width and height;
-   *     Return position as 0,(XScreen width - img width);
-   *     break;
-   *   default:
-   *     fprintf(stderr, "Fatal error! fitOpt is %d and should be [0-%d].\n"
-   *                     "Please make sure fit is configured correctly\n",
-   *             fitOpt, fitOptLimit);
-   *     exit(EXIT_FAILURE);
-   *     break;
-   * }                                                                                */
+  /* This function is still a TODO and this is it's pseudo-code: */
+  int fitOptLimit = 6;
+  //int imWidth   = Imlib_get_image_width(*sampleImg);
+  //int imHeight  = Imlib_get_image_height(*sampleImg);
+
+  for(int temp = 0; temp < strlen(fitOpt); temp++) /* Uppercase every char of fitOpt */
+    fitOpt[temp] = toupper(fitOpt[temp]);
+
+  if(strcmp(fitOpt, "FULLSCREEN") == 0) {
+    //Scale image based on width and height;
+    //return position;
+  }
+
+  else if(strcmp(fitOpt, "FULLSCREEN CROPPED") == 0) {
+    //pass images to crop function image based on width and height since the images
+    //will suffer modifications;
+    //return position;
+  }
+
+  else if(strcmp(fitOpt, "CENTERED") == 0) {
+    //Determine the center of the image and XScreen's width and height and then
+    //determine where the position should start from with that info;
+  }
+
+  else if(strcmp(fitOpt, "TOP-LEFT") == 0) {
+    //Return the position as 0,0 since no modifications are needed;
+  }
+
+  else if(strcmp(fitOpt, "BOTTOM-LEFT") == 0) {
+    //Determine XScreen's height;
+    //Return position as (Xscreen height - img height),0;
+  }
+
+  else if(strcmp(fitOpt, "BOTTOM-RIGHT") == 0) {
+    //Determine XScreen's width and height
+    //Return position as (XScreen height - img height),(XScreen width - img width);
+  }
+
+  else if(strcmp(fitOpt, "TOP-RIGHT") == 0) {
+    //Determine XScreen's width and height;
+    //Return position as 0,(XScreen width - img width);
+  }
+
+  else {
+    fprintf(stderr, "Fatal error! %s is not a valid fit option!\n"
+                    "Please make sure fit is configured correctly\n",
+            fitOpt);
+    exit(EXIT_FAILURE);
+  }
 }
