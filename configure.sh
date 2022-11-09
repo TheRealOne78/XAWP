@@ -73,8 +73,8 @@ fi
 
 # Choosing the right package manager
 ## Linux distributions
-### Debian
 if [ $WILL_INSTALL == true ]; then
+  ### Debian
   if [ -x "$(command -v apt-get)" ]; then
     printf "$INFO apt-get package manager detected\n"
     PKG_MGR="apt-get"
@@ -91,17 +91,19 @@ if [ $WILL_INSTALL == true ]; then
 
   ### CentOS - imlib2 lib/devel does not exist
   #elif [ -x "$(command -v yum)" ]; then
-  # printf "yum package manager detected\n"
+  #  printf "$IFNO yum package manager detected\n"
   #  PKG_MGR="yum"
 
   ### Gentoo
   elif [ -x "$(command -v emerge)" ]; then
     printf "$ERR Portage detected!\n\
 $ERR Automatic package instalation with portage may lead to package conflicts.\n\
-$ERR Please install$DEPENDENCIES manually and run this file again to compile and install XAWP in your system!\n"
+$ERR Please install$DEPENDENCIES manually and run this file again to compile and install XAWP in your system!\n\
+$ERR To install these dependencies, try \"sudo emerge --ask $DEPENDENCIES\".\n
+$ERR For more info, see https://wiki.gentoo.org/wiki/Emerge and https://wiki.gentoo.org/wiki/Portage\n"
     exit 1
 
-  ##BSD Family
+  ## BSD Family
   ### FreeBSD
   elif [ -x "$(command -v pkg)" ]; then
     printf "$INFO pkg package manager detected\n"
@@ -125,23 +127,23 @@ $ERR Please install$DEPENDENCIES manually and run this file again to compile and
     exit 1
   fi
   printf "$INFO $PKG_MGR will be used to install the required dependencies\n"
-
-  # Debian
+  # Install dependencies
+  ## Debian
   if [ $PKG_MGR == "apt-get" ]; then
     $PKG_MGR install -y $DEB_DEPENDENCIES
-  # Arch
+  ## Arch
   elif [ $PKG_MGR == "pacman" ]; then
     $PKG_MGR -Sy --noconfirm $DEPENDENCIES
-  # RedHat
+  ## RedHat
   elif [ $PKG_MGR == "dnf" ]; then
     $PKG_MGR install -y $DEPENDENCIES
-  # FreeBSD
+  ## FreeBSD
   elif [ $PKG_MGR == "pkg" ]; then
     $PKG_MGR install -y $BSD_DEPENDENCIES
-  # OpenBSD
+  ## OpenBSD
   elif [ $PKG_MGR == "pkg_add" ]; then
     $PKG_MGR $BSD_DEPENDENCIES
-  # NetBSD
+  ## NetBSD
   elif [ $PKG_MGR == "pkgin" ]; then
     $PKG_MGR -y install $BSD_DEPENDENCIES
   fi

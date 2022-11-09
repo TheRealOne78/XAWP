@@ -29,8 +29,11 @@ all: $(BIN) install install-config
 uninstall:
 	rm -f $(INSTALL_DIR)$(BIN)
 
+clean:
+	rm -rf $(BUILD_DIR)
+
 TESTDIR = test/
 test: $(BIN)
 	$(BUILD_DIR)$(BIN)
 
-.PHONY: all install uninstall
+.PHONY: all install uninstall clean

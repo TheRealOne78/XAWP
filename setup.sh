@@ -30,9 +30,29 @@ if [[ ! $EXIT_CODE -eq 0 ]]; then
 fi
 
 # Install
-make install
+## BSD family
+if [ -x "$(command -v pkg)" ] || [ -x "$(command -v pkg_add)" ] || [ -x "$(command -v pkgin)" ]; then
+  gmake install
+## Linux
+else
+  make install
+fi
 EXIT_CODE=$?
 if [[ ! $EXIT_CODE -eq 0 ]]; then
   printf "$ERR Couldn't install! Please check if XAWP compiled successfully\n"
+  exit $EXIT_CODE
+fi
+
+# Clean
+## BSD family
+if [ -x "$(command -v pkg)" ] || [ -x "$(command -v pkg_add)" ] || [ -x "$(command -v pkgin)" ]; then
+  gmake clean
+## Linux
+else
+  make clean
+fi
+EXIT_CODE=$?
+if [[ ! $EXIT_CODE -eq 0 ]]; then
+  printf "$ERR Couldn't clean up\n"
   exit $EXIT_CODE
 fi

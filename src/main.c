@@ -582,7 +582,7 @@ void freeUsingPath(void) {
   }
     if(DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated dynamic array of images at address "KGRN"%p"RST"\n\n", (imgPath));
-    free((imgPath));
+    free(imgPath);
 }
 
 void setRootAtoms(Display *display, Monitor *monitor) {

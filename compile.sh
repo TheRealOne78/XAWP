@@ -9,17 +9,12 @@ INFO="["$BLUE"i"$ENDCOLOR"]"
 WARN="["$YELLOW"w"$ENDCOLOR"]"
 ERR="["$RED"e"$ENDCOLOR"]"
 
-#Compiling
+# Compiling
 printf "$INFO Compiling with $(nproc) threads...\n"
-if [ -x "$(command -v pkg)" ]; then
+## BSD family
+if [ -x "$(command -v pkg)" ] || [ -x "$(command -v pkg_add)" ] || [ -x "$(command -v pkgin)" ]; then
   gmake -j$(nproc)
-# OpenBSD
-elif [ -x "$(command -v pkg_add)" ]; then
-  gmake -j$(nproc)
-# NetBSD
-elif [ -x "$(command -v pkgin)" ]; then
-  gmake -j$(nproc)
-# Linux distributions
+## Linux
 else
   make -j$(nproc)
 fi
