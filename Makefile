@@ -14,7 +14,7 @@ $(BIN):
 
 # TODO: refactor this mess
 install:
-	install -t $(INSTALL_DIR) --owner=$(shell stat -c "%G" $(INSTALL_DIR)) --group=$(shell stat -c "%G" $(INSTALL_DIR)) -m 775 $(BUILD_DIR)$(BIN) # install $(COMPILE_DIR)$(BIN) in $(INSTALL_DIR)
+	install -t $(INSTALL_DIR) --owner=$(shell stat -c "%U" $(INSTALL_DIR)) --group=$(shell stat -c "%G" $(INSTALL_DIR)) -m 775 $(BUILD_DIR)$(BIN) # install $(COMPILE_DIR)$(BIN) in $(INSTALL_DIR)
 
 # TODO: refactor this mess
 install-config:
