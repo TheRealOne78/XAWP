@@ -17,17 +17,24 @@ For example, instead of adding the path of the wallpaper files in the source cod
 1. by writing the directory into the configuration file
 2. or by appending to the command an argument to the directory
 
+## Dependencies:
+* bash
+* gcc
+* make (gmake for BSD)
+* imlib2
+* libx11
+* libconfig
+* lolcat (optional)
 
 ## TODO:
+* [x] Add arguments
+* [x] Add configuration file
+* [ ] Add fit
+* [ ] Automate ImageMagick picture converting from gif to other formats with user prompt
+* [ ] Documentation and populate this README.md file and wiki
 
-- [x] Add arguments
-- [x] Add configuration file
-- [ ] Add fit
-- [ ] Automate ImageMagick picture converting from gif to other formats with user prompt
-- [ ] Documentation and populate this README.md file and wiki
+## Wiki
+Get help from the [wiki](https://github.com/TheRealOne78/XAWP/wiki)!
 
 ## Quick note!
 In present, xawp is still buggy and it's advised to use the code from the [stable branch](https://github.com/TheRealOne78/XAWP/tree/stable)
-
-## **New**
-Get help from the [wiki](https://github.com/TheRealOne78/XAWP/wiki)!
