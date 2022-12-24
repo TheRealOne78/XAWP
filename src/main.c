@@ -1,73 +1,80 @@
-#define _POSIX_C_SOURCE 199309L
+/*
+ * Copyright (C) 2022 TheRealOne78 <bajcsielias78@gmail.com>
+ *
+ * This file is part of the XAWP project
+ *
+ * XAWP is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * XAWP is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with XAWP. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-#define _DEBUG false
-#define DEBUG_TEXT_PUTS "\x1B[34mDEBUG\x1B[0m"
+#ifndef _POSIX_C_SOURCE
+  #define _POSIX_C_SOURCE 199309L
+#endif
 
-#define MAX_PATH 4096
+#ifndef DEBUG
+  #define DEBUG false
+#endif
+
+/* Get the maximum path size based of
+ * different operating systems. */
+#ifndef PATH_MAX
+  #ifdef __linux__
+    #include <linux/limits.h>
+  #elif BSD
+    #include <limits.h>
+  #elif __APPLE__
+    #include <limits.h>
+  #endif
+#endif
 
 #define DEFAULT_FRAME_TIME 0.07
 #define DEFAULT_FIT_OPTION "fit"
 
-#ifndef _COLORS_
-  #define _COLORS_
-    /* FOREGROUND */
-    #define RST "\x1B[0m"
-
-    /* Normal colors */
-    #define KBLK  "\x1B[30m" //black
-    #define KRED  "\x1B[31m" //red
-    #define KGRN  "\x1B[32m" //green
-    #define KYEL  "\x1B[33m" //yellow
-    #define KBLU  "\x1B[34m" //blue
-    #define KMAG  "\x1B[35m" //magenta
-    #define KCYN  "\x1B[36m" //cyan
-    #define KWHT  "\x1B[37m" //white
-
-    /* Bright colors */
-    #define KBBLK "\x1B[90m" //bright black(gray)
-    #define KBRED "\x1B[91m" //bright red
-    #define KBGRN "\x1B[92m" //bright green
-    #define KBYEL "\x1B[93m" //bright yellow
-    #define KBBLU "\x1B[94m" //bright blue
-    #define KBMAG "\x1B[95m" //bright magenta
-    #define KBCYN "\x1B[96m" //bright cyan
-    #define KBWHT "\x1B[97m" //bright white
-
-    /* misc */
-    #define BOLD  "\x1B[1m"  //bold
-    #define UNDL  "\x1B[4m"  //underline
-  #endif  /* _COLORS_ */
-/* end_ifndef _COLORS_ */
-
+/* Image processing and displaying */
 #include <Imlib2.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 
+/* Config */
+#include <libconfig.h>
+
+/* For locating paths and files */
+#include <dirent.h>
+
+/* Basic programming */
+#include <ctype.h>
+#include <getopt.h>
+#include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <time.h>
-#include <getopt.h>
-#include <libconfig.h>
-#include <dirent.h>
 #include <string.h>
-#include <math.h>
-#include <ctype.h>
+#include <time.h>
 
-// Basic constants
-const char author[] = "TheRealOne78";
-const char authorMail[] = "bajcsielias78@gmail.com";
-const char ver[] = "0.0.2";
+/* XAWP created headers */
+#include "fancy_text.h"
+#include "info.h"
 
-const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf"; /* This path will be concatenated with HOME envar */
+/* This path will be concatenated with HOME envar */
+const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf";
 
 /* Basic config/argument variables */
-bool DEBUG = _DEBUG;     /* If true, print debug info */
+bool _DEBUG = DEBUG;     /* If true, print debug info */
 
-char pathConf[MAX_PATH]; /* path to images directory, from configuration file */
-char pathArg[MAX_PATH];  /* path to images directory, from user argument (not -c) */
+char pathConf[PATH_MAX]; /* path to images directory, from configuration file */
+char pathArg[PATH_MAX];  /* path to images directory, from user argument (not -c) */
 
-char confPath[MAX_PATH]; /* path to configuration file */
+char confPath[PATH_MAX]; /* path to configuration file */
 
 unsigned imgCount;       /* number of images */
 
@@ -102,8 +109,8 @@ typedef struct {
 void help(void);
 void version(void);
 
-void getImgCount(char str[][MAX_PATH]);
-void getImgPath(char str[][MAX_PATH], int choice);
+void getImgCount(char str[][PATH_MAX]);
+void getImgPath(char str[][PATH_MAX], int choice);
 static int compare_fun (const void *p, const void *q);
 void freeUsingPath(void);
 void setRootAtoms(Display *display, Monitor *monitor);
@@ -151,8 +158,8 @@ int main(int argc, char *argv[]) {
         break;
 
       case 'D':
-        DEBUG = !DEBUG;
-        if(DEBUG)
+        _DEBUG = !_DEBUG;
+        if(_DEBUG)
           fprintf(stdout, DEBUG_TEXT_PUTS": Enabled debug\n");
         break;
 
@@ -178,7 +185,7 @@ int main(int argc, char *argv[]) {
 
       case 'S':
         imgPath = (char**)malloc(1 * sizeof(char*));
-        imgPath[0] = (char*)malloc(MAX_PATH * sizeof(char));
+        imgPath[0] = (char*)malloc(PATH_MAX * sizeof(char));
         strcpy(imgPath[0], optarg);
         imgCount++;
         usingStaticWallpaper = true;
@@ -196,31 +203,7 @@ int main(int argc, char *argv[]) {
   }
   /* print XAWP color logo in ASCII art. Remove a single backslash '\' from each '\\'
    * to see the real logo                                                              */
-  if(system("[[ -x \"$(command -v lolcat)\" ]]") == 0) {
-    system("printf \" /\\$\\$   /\\$\\$  /\\$\\$\\$\\$\\$\\$  /\\$\\$      /\\$\\$ /\\$\\$\\$\\$\\$\\$\\$\\n| \\$\\$  / \\$\\$ /\\$\\$__  \\$\\$| \\$\\$  /\\$ | \\$\\$| \\$\\$__  \\$\\$\\n|  \\$\\$/ \\$\\$/| \\$\\$  \\ \\$\\$| \\$\\$ /\\$\\$\\$| \\$\\$| \\$\\$  \\ \\$\\$\\n \\  \\$\\$\\$\\$/ | \\$\\$\\$\\$\\$\\$\\$\\$| \\$\\$/\\$\\$ \\$\\$ \\$\\$| \\$\\$\\$\\$\\$\\$\\$\\n  >\\$\\$  \\$\\$ | \\$\\$__  \\$\\$| \\$\\$\\$\\$_  \\$\\$\\$\\$| \\$\\$____/\\n /\\$\\$/\\  \\$\\$| \\$\\$  | \\$\\$| \\$\\$\\$/ \\  \\$\\$\\$| \\$\\$      \\n| \\$\\$  \\ \\$\\$| \\$\\$  | \\$\\$| \\$\\$/   \\  \\$\\$| \\$\\$      \\n|__/  |__/|__/  |__/|__/     \\__/|__/      \\n\" | lolcat");
-  }
-  else {
-    printf("\n" /* ==print logo== */
-      KYEL" /$$   /$$"  KRED"  /$$$$$$ "  KMAG" /$$      /$$"  KBCYN" /$$$$$$$ "  RST"\n"
-      KYEL"| $$  / $$"  KRED" /$$__  $$"  KMAG"| $$  /$ | $$"  KBCYN"| $$__  $$"  RST"\n"
-      KYEL"|  $$/ $$/"  KRED"| $$  \\ $$"  KMAG"| $$ /$$$| $$"  KBCYN"| $$  \\ $$"  RST"\n"
-      KYEL" \\  $$$$/ "  KRED"| $$$$$$$$"  KMAG"| $$/$$ $$ $$"  KBCYN"| $$$$$$$/"  RST"\n"
-      KYEL"  >$$  $$ "  KRED"| $$__  $$"  KMAG"| $$$$_  $$$$"  KBCYN"| $$____/ "  RST"\n"
-      KYEL" /$$/\\  $$"  KRED"| $$  | $$"  KMAG"| $$$/ \\  $$$"  KBCYN"| $$      "  RST"\n"
-      KYEL"| $$  \\ $$"  KRED"| $$  | $$"  KMAG"| $$/   \\  $$"  KBCYN"| $$      "  RST"\n"
-      KYEL"|__/  |__/"  KRED"|__/  |__/"  KMAG"|__/     \\__/"  KBCYN"|__/      "  RST"\n"
-    );
-  }
-  printf(KBWHT "X11 Animated Wallpaper Player v%s\n\n" RST, ver);
-  /* ASCII art generated from patorjk.com/software/taag
-   *
-   * #-> bigmoney-ne : by nathan bloomfield (xzovik@gmail.com)
-   * #-> based on art from the legendary MAKEMONEYFAST chain letter
-   * #->
-   * #-> History:
-   * #->   5-30-2007 : first version (required characters only)
-   * #->
-   * #-> (end comments)                                           */
+  puts_logo();
 
   config_t cfg;
   config_setting_t *setting;
@@ -236,7 +219,7 @@ int main(int argc, char *argv[]) {
     strcat(confPath, appendDefaultConfPath);
   }
 
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": configuration file path: \"%s\"\n", confPath);
 
   // Read the file. If there is an error, report it and exit.
@@ -248,15 +231,15 @@ int main(int argc, char *argv[]) {
   }
 
   if(config_lookup_bool(&cfg, "debug", &cfgDebug))
-    DEBUG = cfgDebug;
+    _DEBUG = cfgDebug;
   else
     fprintf(stderr, "No 'debug' setting in configuration file.\n");
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Enabled debug\n");
 
   if(!hasArgStaticWallpaper && config_lookup_string(&cfg, "static-wallpaper", &cfgStaticWallpaper)){
     imgPath = (char**)malloc(1 * sizeof(char*));
-    imgPath[0] = (char*)malloc(MAX_PATH * sizeof(char));
+    imgPath[0] = (char*)malloc(PATH_MAX * sizeof(char));
     strcpy(imgPath[0], cfgStaticWallpaper);
     imgCount++;
     usingStaticWallpaper = true;
@@ -276,7 +259,7 @@ int main(int argc, char *argv[]) {
 
   if(!hasArgTime && config_lookup_float(&cfg, "time", &cfgTime) && !usingStaticWallpaper) {
     frameTime = cfgTime;
-    if(DEBUG)
+    if(_DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": frameTime: %lf\n", frameTime);
   }
   else
@@ -288,7 +271,7 @@ int main(int argc, char *argv[]) {
 
   config_destroy(&cfg);
 
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Loading images\n");
 
   int fileOffset = 0;
@@ -303,21 +286,21 @@ int main(int argc, char *argv[]) {
   if(!usingStaticWallpaper) {
     for(int temp = 0; temp < imgCount - fileOffset; temp++) {
       images[temp] = imlib_load_image(imgPath[(fileOffset+temp)]);
-      if(DEBUG)
+      if(_DEBUG)
         fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (imgPath)[(fileOffset+temp)]);
     }
-    if(DEBUG)
+    if(_DEBUG)
       fprintf(stdout, "\n");
   }
   else {
     images[0] = imlib_load_image((imgPath)[0]);
-    if(DEBUG)
+    if(_DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": Imlib loaded %s\n", (imgPath)[0]);
   }
   freeUsingPath();
 
   // Loading the monitors, counting them and getting the resolution
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Loading monitors\n");
 
   Display *display = XOpenDisplay(NULL);
@@ -327,13 +310,13 @@ int main(int argc, char *argv[]) {
   }
 
   const int screen_count = ScreenCount(display);
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Found %d screens\n", screen_count);
 
   Monitor *monitors = malloc(sizeof(Monitor) * screen_count);
   for(int current_screen = 0; current_screen < screen_count;
       ++current_screen) {
-    if(DEBUG)
+    if(_DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": Running screen %d\n", current_screen);
 
     const int width  = DisplayWidth(display, current_screen);
@@ -342,7 +325,7 @@ int main(int argc, char *argv[]) {
     Visual *vis      = DefaultVisual(display, current_screen);
     const int cm     = DefaultColormap(display, current_screen);
 
-    if(DEBUG) {
+    if(_DEBUG) {
       fprintf(stdout, DEBUG_TEXT_PUTS": Screen %d: width: %d, height: %d, depth: %d\n",
               current_screen, width, height, depth);
     }
@@ -363,12 +346,12 @@ int main(int argc, char *argv[]) {
     imlib_context_set_color_range(imlib_create_color_range());
     imlib_context_pop();
   }
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Loaded %d screens\n", screen_count);
 
   /* Rendering the images on the screens found at the
    * choosen time interval, forever                */
-  if(DEBUG)
+  if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Starting render loop\n");
 
   struct timespec timeout;
@@ -400,7 +383,7 @@ int main(int argc, char *argv[]) {
         imlib_context_pop();
       }
       if(usingStaticWallpaper) {
-        if(DEBUG)
+        if(_DEBUG)
           fprintf(stdout, DEBUG_TEXT_PUTS": Using static wallpaper detected, exiting...\n");
         exit(EXIT_SUCCESS);
       }
@@ -446,10 +429,10 @@ void version(void) {
          "This is free software: you are free to change and redistribute it."             "\n"
          "There is NO WARRANTY, to the extent permitted by law."                          "\n"
                                                                                           "\n"
-        , ver);
+        , VERSION);
 }
 
-void getImgCount(char str[][MAX_PATH]) {
+void getImgCount(char str[][PATH_MAX]) {
   /* This function gets the string of the directory where the images exist and
    * counts every image. argORcout is to know if pImgCount should point to
    * the argument img count variable or configuration count variable.       */
@@ -481,7 +464,7 @@ static int compare_fun (const void *p, const void *q) {
   return cmp;
 }
 
-void getImgPath(char str[][MAX_PATH], int choice) {
+void getImgPath(char str[][PATH_MAX], int choice) {
   /* This function serves for saving the images paths from a
    * choosen directory to a dynamically allocated array of
    * pointers, pointers pointing to the string of path
@@ -501,7 +484,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
    * statements are used to know if the first 1-2 files
    * are or not . and ..                                  */
 
-  if(DEBUG) {
+  if(_DEBUG) {
     switch(choice) {
       case 0:
         fprintf(stdout, DEBUG_TEXT_PUTS": Using \"%s\" from configuration file\n", *str);
@@ -523,7 +506,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     if(*str[strlen(*str)] != '/') /* Check to see if path is not ending with '/' */
       notEndingWithSlash = true;
     while ((dir = readdir(d)) != NULL) {
-      (imgPath)[temp] = (char*)malloc(MAX_PATH * sizeof(char));
+      (imgPath)[temp] = (char*)malloc(PATH_MAX * sizeof(char));
       strcpy((imgPath)[temp], *str);
       if(notEndingWithSlash) /* Add "/" to frame path if the dir path doesn't end with "/" */
         strcat((imgPath)[temp], "/");
@@ -535,7 +518,7 @@ void getImgPath(char str[][MAX_PATH], int choice) {
     qsort(imgPath, imgCount, sizeof((imgPath)[0]), compare_fun);
 
     /* Prints all the selected files */
-    if(DEBUG) {
+    if(_DEBUG) {
       fprintf(stdout, "\n"DEBUG_TEXT_PUTS": Selected files:\n");
       for(int i = 0; i < imgCount; i++)
         fprintf(stdout, "  | File %d: %s\n", i, (imgPath)[i]);
@@ -544,23 +527,23 @@ void getImgPath(char str[][MAX_PATH], int choice) {
 
     /* Now check if there are any "." and ".." files in path
      * in order to know where the actual images start     */
-    char tempImgPath1dot[MAX_PATH];
+    char tempImgPath1dot[PATH_MAX];
     strcpy(tempImgPath1dot, *str);
     strcat(tempImgPath1dot, "/.");
     if(strcmp((imgPath)[0], tempImgPath1dot) == 0) {
       hasCurrentDir = true;
-      if(DEBUG)
+      if(_DEBUG)
         fprintf(stdout, DEBUG_TEXT_PUTS": \"%s/\" has current directory file, skipping it.\n", *str);
     }
     else
       hasCurrentDir = false;
 
-    char tempImgPath2dot[MAX_PATH];
+    char tempImgPath2dot[PATH_MAX];
     strcpy(tempImgPath2dot, *str);
     strcat(tempImgPath2dot, "/..");
     if(strcmp((imgPath)[1], tempImgPath2dot) == 0) {
       hasParentDir = true;
-      if(DEBUG)
+      if(_DEBUG)
         fprintf(stdout, DEBUG_TEXT_PUTS": \"%s/\" has parent directory file, skipping it.\n", *str);
     }
     else
@@ -572,12 +555,12 @@ void freeUsingPath(void) {
    * allocated memory from the using image path */
 
   for(int temp; temp < imgCount; temp++) {
-    if(DEBUG)
+    if(_DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated address "KGRN"%p"RST" pointing to file index %d\n",
               (imgPath)[temp], temp);
     free((imgPath)[temp]);
   }
-    if(DEBUG)
+    if(_DEBUG)
       fprintf(stdout, DEBUG_TEXT_PUTS": Unallocated dynamic array of images at address "KGRN"%p"RST"\n\n", (imgPath));
     free(imgPath);
 }
