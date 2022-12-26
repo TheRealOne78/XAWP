@@ -1,6 +1,7 @@
 #!/bin/bash
 
 RED="\e[31m"
+GREEN="\e[32m"
 YELLOW="\e[33m"
 BLUE="\e[34m"
 ENDCOLOR="\e[0m"
@@ -27,7 +28,7 @@ WILL_INSTALL=false  # Check if anything will be installed, else skip
 
 # Checking existing dependencies
 if [ ! -x "$(command -v gcc)" ]; then
-  printf "$INFO gcc not detected, adding it in the dependencies install queue\n"
+  printf "$INFO ${GREEN}gcc${ENDCOLOR} not detected, adding it in the dependencies install queue\n"
   DEPENDENCIES="$DEPENDENCIES gcc"
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES gcc"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES gcc"
@@ -36,7 +37,7 @@ if [ ! -x "$(command -v gcc)" ]; then
 fi
 
 if [ ! -x "$(command -v make)" ]; then
-  printf "$INFO make not detected, adding it in the dependencies install queue\n"
+  printf "$INFO ${GREEN}make${ENDCOLOR} not detected, adding it in the dependencies install queue\n"
   DEPENDENCIES="$DEPENDENCIES make"
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES make"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES make"
@@ -45,7 +46,7 @@ if [ ! -x "$(command -v make)" ]; then
 fi
 
 if [ ! -f "/usr/include/Imlib2.h" ]; then
-  printf "$INFO imlib2 not detected, adding it in the dependencies install queue\n"
+  printf "$INFO ${GREEN}imlib2${ENDCOLOR} not detected, adding it in the dependencies install queue\n"
   DEPENDENCIES="$DEPENDENCIES imlib2"
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES libimlib2-dev"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES imlib2-devel"
@@ -54,7 +55,7 @@ if [ ! -f "/usr/include/Imlib2.h" ]; then
 fi
 
 if [ ! -d "/usr/include/X11" ]; then
-  printf "$INFO libx11 not detected, adding it in the dependencies install queue\n"
+  printf "$INFO ${GREEN}libx11${ENDCOLOR} not detected, adding it in the dependencies install queue\n"
   DEPENDENCIES="$DEPENDENCIES libx11"
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES libx11-dev"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES libx11-devel"
@@ -63,7 +64,7 @@ if [ ! -d "/usr/include/X11" ]; then
 fi
 
 if [ ! -f "/usr/include/libconfig.h" ]; then
-  printf "$INFO libconfig not detected, adding it in the dependencies install queue\n"
+  printf "$INFO ${GREEN}libconfig${ENDCOLOR} not detected, adding it in the dependencies install queue\n"
   DEPENDENCIES="$DEPENDENCIES libconfig"
   DEB_DEPENDENCIES="$DEB_DEPENDENCIES libconfig-dev"
   RPM_DEPENDENCIES="$RPM_DEPENDENCIES libconfig-devel"
