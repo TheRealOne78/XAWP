@@ -17,6 +17,14 @@
  * along with XAWP. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define AUTHOR "TheRealOne78"
-#define AUTHORMAIL "bajcsielias78@gmail.com"
-#define VERSION "0.0.2"
+#ifndef AUTHOR
+  #define AUTHOR "TheRealOne78"
+#endif
+
+#ifndef AUTHORMAIL
+  #define AUTHORMAIL "bajcsielias78@gmail.com"
+#endif
+
+#ifndef VERSION
+  #define VERSION "0.0.2"
+#endif

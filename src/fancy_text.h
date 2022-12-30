@@ -17,8 +17,6 @@
  * along with XAWP. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
 #ifndef _COLORS_
   #define _COLORS_
 
