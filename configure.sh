@@ -92,7 +92,7 @@ if [ $WILL_INSTALL == true ]; then
 
   ### CentOS - imlib2 lib/devel does not exist
   #elif [ -x "$(command -v yum)" ]; then
-  #  printf "$IFNO yum package manager detected\n"
+  #  printf "$INFO yum package manager detected\n"
   #  PKG_MGR="yum"
 
   ### Gentoo
@@ -127,7 +127,7 @@ $ERR For more info, see https://wiki.gentoo.org/wiki/Emerge and https://wiki.gen
   $ERR Please install$DEPENDENCIES manually and run this file again to compile and install XAWP in your system!\n"
     exit 1
   fi
-  printf "$INFO $PKG_MGR will be used to install the required dependencies\n"
+  printf "$INFO $PKG_MGR will install the required dependencies\n"
   # Install dependencies
   ## Debian
   if [ $PKG_MGR == "apt-get" ]; then
