@@ -20,35 +20,34 @@
 #ifndef _COLORS_
   #define _COLORS_
 
-    /* FOREGROUND */
-    #define RST "\x1B[0m"
+  /* FOREGROUND */
+  #define RST "\x1B[0m"
 
-    /* Normal colors */
-    #define KBLK  "\x1B[30m" //black
-    #define KRED  "\x1B[31m" //red
-    #define KGRN  "\x1B[32m" //green
-    #define KYEL  "\x1B[33m" //yellow
-    #define KBLU  "\x1B[34m" //blue
-    #define KMAG  "\x1B[35m" //magenta
-    #define KCYN  "\x1B[36m" //cyan
-    #define KWHT  "\x1B[37m" //white
+  /* Normal colors */
+  #define KBLK  "\x1B[30m" //black
+  #define KRED  "\x1B[31m" //red
+  #define KGRN  "\x1B[32m" //green
+  #define KYEL  "\x1B[33m" //yellow
+  #define KBLU  "\x1B[34m" //blue
+  #define KMAG  "\x1B[35m" //magenta
+  #define KCYN  "\x1B[36m" //cyan
+  #define KWHT  "\x1B[37m" //white
 
-    /* Bright colors */
-    #define KBBLK "\x1B[90m" //bright black(gray)
-    #define KBRED "\x1B[91m" //bright red
-    #define KBGRN "\x1B[92m" //bright green
-    #define KBYEL "\x1B[93m" //bright yellow
-    #define KBBLU "\x1B[94m" //bright blue
-    #define KBMAG "\x1B[95m" //bright magenta
-    #define KBCYN "\x1B[96m" //bright cyan
-    #define KBWHT "\x1B[97m" //bright white
+  /* Bright colors */
+  #define KBBLK "\x1B[90m" //bright black(gray)
+  #define KBRED "\x1B[91m" //bright red
+  #define KBGRN "\x1B[92m" //bright green
+  #define KBYEL "\x1B[93m" //bright yellow
+  #define KBBLU "\x1B[94m" //bright blue
+  #define KBMAG "\x1B[95m" //bright magenta
+  #define KBCYN "\x1B[96m" //bright cyan
+  #define KBWHT "\x1B[97m" //bright white
 
-    /* misc */
-    #define BOLD  "\x1B[1m"  //bold
-    #define UNDL  "\x1B[4m"  //underline
+  /* misc */
+  #define BOLD  "\x1B[1m"  //bold
+  #define UNDL  "\x1B[4m"  //underline
 
-  #endif  /* _COLORS_ */
-/* end_ifndef _COLORS_ */
+#endif  /* _COLORS_ */
 
 #define DEBUG_TEXT_PUTS KBLU"DEBUG"RST
 

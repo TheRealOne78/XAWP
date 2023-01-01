@@ -201,8 +201,8 @@ int main(int argc, char *argv[]) {
         abort();
     }
   }
-  /* print XAWP color logo in ASCII art. Remove a single backslash '\' from each '\\'
-   * to see the real logo                                                              */
+
+  /* print XAWP color logo in ASCII art. */
   puts_logo();
 
   config_t cfg;
