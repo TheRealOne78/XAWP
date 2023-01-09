@@ -17,7 +17,10 @@
  * along with XAWP. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _COLORS_
+#ifndef __FANCY_TEXT_H__
+#define __FANCY_TEXT_H__
+
+# ifndef _COLORS_
   #define _COLORS_
 
   /* FOREGROUND */
@@ -47,8 +50,14 @@
   #define BOLD  "\x1B[1m"  //bold
   #define UNDL  "\x1B[4m"  //underline
 
-#endif  /* _COLORS_ */
+# endif  /* _COLORS_ */
 
-#define DEBUG_TEXT_PUTS KBLU"DEBUG"RST
+/* colored status macros */
+#define DEBUG_TEXT_PUTS  KBLU "DEBUG" RST
+#define INFO_TEXT_PUTS   RST "[" KBLU "i" RST "] " RST // [i]
+#define WARN_TEXT_PUTS   RST "[" KYEL "w" RST "] " RST // [w]
+#define ERR_TEXT_PUTS    RST "[" KRED "e" RST "] " RST // [e]
 
 void puts_logo();
+
+#endif

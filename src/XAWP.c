@@ -25,18 +25,6 @@
   #define DEBUG false
 #endif
 
-/* Get the maximum path size based of
- * different operating systems. */
-#ifndef PATH_MAX
-  #ifdef __linux__
-    #include <linux/limits.h>
-  #elif BSD
-    #include <limits.h>
-  #elif __APPLE__
-    #include <limits.h>
-  #endif
-#endif
-
 #define DEFAULT_FRAME_TIME 0.07
 #define DEFAULT_FIT_OPTION "fit"
 
@@ -62,8 +50,10 @@
 #include <time.h>
 
 /* XAWP created headers */
-#include "fancy_text.h"
+#include "fancy-text.h"
 #include "info.h"
+#include "dir-checker.h"
+#include "XAWP.h"
 
 /* This path will be concatenated with HOME envar */
 const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf";
@@ -98,24 +88,6 @@ char *fitOpt;                              /* The final fit option */
 /* Miscellaneous variables */
 bool hasCurrentDir = false;            /* If true, the directory containing images has a current directory file: ./ */
 bool hasParentDir = false;             /* If true, the directory containing images has a parent directory file: ../ */
-
-typedef struct {
-  Window root;
-  Pixmap pixmap;
-  Imlib_Context *render_context;
-  int width, height;
-} Monitor;
-
-void help(void);
-void version(void);
-
-void getImgCount(char str[][PATH_MAX]);
-void getImgPath(char str[][PATH_MAX], int choice);
-static int compare_fun (const void *p, const void *q);
-void freeUsingPath(void);
-void setRootAtoms(Display *display, Monitor *monitor);
-void ImFit(Imlib_Image *image[]);
-
 
 int main(int argc, char *argv[]) {
   char configTime[6];
@@ -194,7 +166,7 @@ int main(int argc, char *argv[]) {
       case '?':
         /* No need to print and error message because
            getopt_long did that already. */
-        exit(1);
+        exit(EXIT_FAILURE);
         break;
 
       default:
@@ -224,16 +196,16 @@ int main(int argc, char *argv[]) {
 
   // Read the file. If there is an error, report it and exit.
   if(! config_read_file(&cfg, confPath)) {
-    fprintf(stderr, "%s:%d - %s\n", config_error_file(&cfg),
+    fprintf(stderr, ERR_TEXT_PUTS"%s:%d - %s\n", config_error_file(&cfg),
            config_error_line(&cfg), config_error_text(&cfg));
     config_destroy(&cfg);
-    return(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
   }
 
   if(config_lookup_bool(&cfg, "debug", &cfgDebug))
     _DEBUG = cfgDebug;
   else
-    fprintf(stderr, "No 'debug' setting in configuration file.\n");
+    fprintf(stderr, ERR_TEXT_PUTS"No 'debug' setting in configuration file.\n");
   if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": Enabled debug\n");
 
@@ -255,7 +227,7 @@ int main(int argc, char *argv[]) {
     getImgPath(&pathConf, 0);  //conf=0, arg=1
   }
   else
-    fprintf(stderr, "No 'path' setting in configuration file.\n");
+    fprintf(stderr, ERR_TEXT_PUTS"No 'path' setting in configuration file.\n");
 
   if(!hasArgTime && config_lookup_float(&cfg, "time", &cfgTime) && !usingStaticWallpaper) {
     frameTime = cfgTime;
@@ -263,7 +235,7 @@ int main(int argc, char *argv[]) {
       fprintf(stdout, DEBUG_TEXT_PUTS": frameTime: %lf\n", frameTime);
   }
   else
-    fprintf(stderr, "No 'time' setting in configuration file.\n");
+    fprintf(stderr, ERR_TEXT_PUTS"No 'time' setting in configuration file.\n");
 
   if(config_lookup_bool(&cfg, "fit", &cfgFit) && !hasArgFit && !usingStaticWallpaper) {
     hasConfFit = cfgFit;
@@ -305,7 +277,7 @@ int main(int argc, char *argv[]) {
 
   Display *display = XOpenDisplay(NULL);
   if (!display) {
-    fprintf(stderr, "Could not open XDisplay\n");
+    fprintf(stderr, ERR_TEXT_PUTS"Could not open XDisplay\n");
     exit(42);
   }
 
@@ -669,7 +641,7 @@ void ImFit(Imlib_Image *image[]) {
   }
 
   else {
-    fprintf(stderr, "Fatal error! %s is not a valid fit option!\n"
+    fprintf(stderr, ERR_TEXT_PUTS"Fatal error! %s is not a valid fit option!\n"
                     "Please make sure fit is configured correctly\n",
             fitOpt);
     exit(EXIT_FAILURE);
