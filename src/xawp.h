@@ -19,6 +19,28 @@
 #ifndef __XAWP_H__
 # define __XAWP_H__
 
+
+#ifdef DEBUG
+/* If DEBUG was defined somewhere else as false, redefine here */
+# if DEBUG == false
+/* If you want DEBUG as true, define it only here in A and B, unless you know
+ * what you are doing. The values between A and B must be the same! */
+#  define DEBUG false  /* A - MUST be the same as B! */
+# endif
+#else
+# define DEBUG false  /* B - MUST be the same as A! */
+#endif
+
+/* The default wait time between frame changes */
+#ifndef DEFAULT_FRAME_TIME
+# define DEFAULT_FRAME_TIME 0.07
+#endif
+
+/* The fit option XAWP should use by default */
+#ifndef DEFAULT_FIT_OPTION
+# define DEFAULT_FIT_OPTION "fit"
+#endif
+
 typedef struct {
   Window root;
   Pixmap pixmap;
