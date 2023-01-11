@@ -58,6 +58,10 @@
 #define WARN_TEXT_PUTS   RST "[" KYEL "w" RST "] " RST // [w]
 #define ERR_TEXT_PUTS    RST "[" KRED "e" RST "] " RST // [e]
 
+#define INFO_TEXT_PUTS_CAST(text)  INFO_TEXT_PUTS text
+#define WARN_TEXT_PUTS_CAST(text)  WARN_TEXT_PUTS text
+#define ERR_TEXT_PUTS_CAST(text)   ERR_TEXT_PUTS text
+
 void puts_logo();
 
 #endif
