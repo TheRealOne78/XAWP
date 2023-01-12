@@ -48,6 +48,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <signal.h>
 
 /* XAWP created headers */
 #include "fancy-text.h"
@@ -90,6 +91,10 @@ bool hasCurrentDir = false;            /* If true, the directory containing imag
 bool hasParentDir = false;             /* If true, the directory containing images has a parent directory file: ../ */
 
 int main(int argc, char *argv[]) {
+
+  // Set up a handler for the SIGTERM signal
+  signal(SIGTERM, term_handler);
+
   char configTime[6];
   configTime[0] = '\0';
 
@@ -402,6 +407,17 @@ void version(void) {
          "There is NO WARRANTY, to the extent permitted by law."                          "\n"
                                                                                           "\n"
         , VERSION);
+}
+
+void term_handler(int signum) {
+
+  /* When receiving a SIGTERM, this function will exit gracefully with an
+   * informative quit message to the user. */
+
+  fprintf(stdout, INFO_TEXT_PUTS"Quiting...\n");
+  fflush(stdout);
+
+  exit(EXIT_SUCCESS);
 }
 
 void getImgCount(char str[][PATH_MAX]) {

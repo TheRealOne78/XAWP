@@ -29,6 +29,8 @@ typedef struct {
 void help(void);
 void version(void);
 
+void term_handler(int signum);
+
 void getImgCount(char str[][PATH_MAX]);
 void getImgPath(char str[][PATH_MAX], int choice);
 static int compare_fun(const void *p, const void *q);
