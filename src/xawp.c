@@ -18,15 +18,12 @@
  */
 
 #ifndef _POSIX_C_SOURCE
-  #define _POSIX_C_SOURCE 199309L
+# define _POSIX_C_SOURCE 199309L
 #endif
 
 #ifndef DEBUG
-  #define DEBUG false
+# define DEBUG false
 #endif
-
-#define DEFAULT_FRAME_TIME 0.07
-#define DEFAULT_FIT_OPTION "fit"
 
 /* Image processing and displaying */
 #include <Imlib2.h>
@@ -54,10 +51,11 @@
 #include "fancy-text.h"
 #include "info.h"
 #include "dir-checker.h"
-#include "XAWP.h"
+#include "xawp.h"
 
 /* This path will be concatenated with HOME envar */
-const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf";
+const char appendDefaultConfPath[PATH_MAX];
+//const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf";
 
 /* Basic config/argument variables */
 bool _DEBUG = DEBUG;     /* If true, print debug info */
