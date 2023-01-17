@@ -41,6 +41,11 @@
 # define DEFAULT_FIT_OPTION "fit"
 #endif
 
+/* The default XAWP config file */
+#ifndef DEFAULT_CONFIG_FILE_PATH
+# define DEFAULT_CONFIG_FILE_PATH "~/.config/xawp/xawp.conf"
+#endif
+
 typedef struct {
   Window root;
   Pixmap pixmap;
@@ -53,8 +58,8 @@ void version(void);
 
 void term_handler(int signum);
 
-void getImgCount(char str[][PATH_MAX]);
-void getImgPath(char str[][PATH_MAX], int choice);
+void getImgCount(char str[PATH_MAX]);
+void getImgPath(char str[PATH_MAX], int choice);
 static int compare_fun(const void *p, const void *q);
 void freeUsingPath(void);
 void setRootAtoms(Display *display, Monitor *monitor);

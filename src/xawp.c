@@ -54,20 +54,23 @@
 #include "xawp.h"
 
 /* This path will be concatenated with HOME envar */
-const char appendDefaultConfPath[PATH_MAX];
-//const char appendDefaultConfPath[] = "/.config/xawp/xawp.conf";
+char defaultConfigFilePath[PATH_MAX];
 
 /* Basic config/argument variables */
-bool _DEBUG = DEBUG;     /* If true, print debug info */
 
-char pathConf[PATH_MAX]; /* path to images directory, from configuration file */
-char pathArg[PATH_MAX];  /* path to images directory, from user argument (not -c) */
+/* If _DEBUG is true, print debug info.
+ * Note that _DEBUG is a variable that may be changed in runtime and DEBUG is a
+ * defined macro */
+bool _DEBUG = DEBUG;
 
-char confPath[PATH_MAX]; /* path to configuration file */
+char pathConf[PATH_MAX];                   /* path to images directory, from configuration file */
+char pathArg[PATH_MAX];                    /* path to images directory, from user argument (not -c) */
 
-unsigned imgCount;       /* number of images */
+char confPath[PATH_MAX];                   /* path to configuration file */
 
-char **imgPath;          /* pointers to paths of images, from configuration file */
+unsigned imgCount;                         /* number of images */
+
+char **imgPath;                            /* pointers to paths of images, from configuration file */
 
 double frameTime = DEFAULT_FRAME_TIME;     /* time between frames */ /* The time set is the default one */
 
@@ -85,18 +88,24 @@ char defaultFitOpt[] = DEFAULT_FIT_OPTION; /* Default Fit Option - Order 2 */
 char *fitOpt;                              /* The final fit option */
 
 /* Miscellaneous variables */
-bool hasCurrentDir = false;            /* If true, the directory containing images has a current directory file: ./ */
-bool hasParentDir = false;             /* If true, the directory containing images has a parent directory file: ../ */
+bool hasCurrentDir = false;                /* If true, the directory containing images has a current directory file: ./ */
+bool hasParentDir = false;                 /* If true, the directory containing images has a parent directory file: ../ */
 
 int main(int argc, char *argv[]) {
 
-  // Set up a handler for the SIGTERM signal
+  /* == Initialize everything before running anything meaningful == */
+
+  /* Set up a handler for the SIGTERM signal */
   signal(SIGTERM, term_handler);
 
+  /* TODO: See the purpose of this string and comment it here */
   char configTime[6];
-  configTime[0] = '\0';
+  memset(configTime, '\0', sizeof(configTime));
 
-  // Do stuff with the arguments
+  /* Format the path from relative to absolute */
+  formatPath(DEFAULT_CONFIG_FILE_PATH, defaultConfigFilePath);
+
+  /* Struct argument options */
   static struct option long_options [] = {
     { "help"                , no_argument      , NULL , 'h' },
     { "time"                , required_argument, NULL , 't' },
@@ -108,56 +117,66 @@ int main(int argc, char *argv[]) {
     { "set-static-wallpaper", required_argument, NULL , 'S' },
     { NULL                  , 0                , NULL , 0   }
   };
-
+  /* And check for arguments */
   while(1) {
     int c = getopt_long(argc, argv, "ht:vDf:d:c:S:", long_options, NULL);
     /* Detect the end of the options. */
     if (c == -1)
       break;
 
-    switch (c) {
+    switch(c) {
+      /* help */
       case 'h':
         help();
         exit(0);
         break;
 
+      /* time */
       case 't':
         snprintf(configTime, sizeof(configTime), "%s", optarg);
         frameTime = atof(configTime);
         hasArgTime = true;
         break;
 
+      /* version */
       case 'v':
         version();
         exit(0);
         break;
 
+      /* debug */
       case 'D':
-        _DEBUG = !_DEBUG;
+        if(!_DEBUG)
+          _DEBUG = true;
         if(_DEBUG)
           fprintf(stdout, DEBUG_TEXT_PUTS": Enabled debug\n");
         break;
 
+      /* fit */
       case 'f':
         printf("Fit is not implemented yet, skipping...\n");
-        //TODO: implement this fit
+        /* TODO: implement this fit and remove this break */
         break;
+        /* part of Fit */
         strcpy(fitOpt, optarg);
         hasArgFit = true;
         break;
 
+      /* directory */
       case 'd':
         strcpy(pathArg, optarg);
-        getImgCount(&pathArg);
-        getImgPath (&pathArg, 1);
+        getImgCount(pathArg);
+        getImgPath (pathArg, 1);
         hasArgDir = true;
         break;
 
+      /* config */
       case 'c':
         strcpy(confPath, optarg);
         isArgConf = true;
         break;
 
+      /* set-static-wallpaper */
       case 'S':
         imgPath = (char**)malloc(1 * sizeof(char*));
         imgPath[0] = (char*)malloc(PATH_MAX * sizeof(char));
@@ -188,11 +207,8 @@ int main(int argc, char *argv[]) {
   int cfgDebug;
   int cfgFit;
   config_init(&cfg);
-
-  if(!isArgConf) {
-    strcpy(confPath, getenv("HOME"));
-    strcat(confPath, appendDefaultConfPath);
-  }
+  if(!isArgConf)
+    strcpy(confPath, defaultConfigFilePath);
 
   if(_DEBUG)
     fprintf(stdout, DEBUG_TEXT_PUTS": configuration file path: \"%s\"\n", confPath);
@@ -200,7 +216,7 @@ int main(int argc, char *argv[]) {
   // Read the file. If there is an error, report it and exit.
   if(! config_read_file(&cfg, confPath)) {
     fprintf(stderr, ERR_TEXT_PUTS"%s:%d - %s\n", config_error_file(&cfg),
-           config_error_line(&cfg), config_error_text(&cfg));
+            config_error_line(&cfg), config_error_text(&cfg));
     config_destroy(&cfg);
     exit(EXIT_FAILURE);
   }
@@ -221,13 +237,13 @@ int main(int argc, char *argv[]) {
   }
 
   if(hasArgDir && !usingStaticWallpaper) {
-    getImgCount(&pathArg);
-    getImgPath(&pathArg, 1);
+    getImgCount(pathArg);
+    getImgPath(pathArg, 1);
   }
   else if(!hasArgDir && config_lookup_string(&cfg, "path", &cfgPath) && !usingStaticWallpaper) {
     strcpy(pathConf, cfgPath);
-    getImgCount(&pathConf); //conf=0, arg=1
-    getImgPath(&pathConf, 0);  //conf=0, arg=1
+    getImgCount(pathConf);
+    getImgPath(pathConf, 0); /* getImgPath: 0 == conf; 1 == arg */
   }
   else
     fprintf(stderr, ERR_TEXT_PUTS"No 'path' setting in configuration file.\n");
@@ -418,7 +434,7 @@ void term_handler(int signum) {
   exit(EXIT_SUCCESS);
 }
 
-void getImgCount(char str[][PATH_MAX]) {
+void getImgCount(char str[PATH_MAX]) {
   /* This function gets the string of the directory where the images exist and
    * counts every image. argORcout is to know if pImgCount should point to
    * the argument img count variable or configuration count variable.       */
@@ -427,7 +443,7 @@ void getImgCount(char str[][PATH_MAX]) {
   DIR *d;
   struct dirent *dir;
   int i = 0;
-  d = opendir(*str);
+  d = opendir(str);
   if(d) {
     while ((dir = readdir(d)) != NULL)
       imgCount++;
@@ -450,7 +466,7 @@ static int compare_fun (const void *p, const void *q) {
   return cmp;
 }
 
-void getImgPath(char str[][PATH_MAX], int choice) {
+void getImgPath(char str[PATH_MAX], int choice) {
   /* This function serves for saving the images paths from a
    * choosen directory to a dynamically allocated array of
    * pointers, pointers pointing to the string of path
@@ -473,10 +489,10 @@ void getImgPath(char str[][PATH_MAX], int choice) {
   if(_DEBUG) {
     switch(choice) {
       case 0:
-        fprintf(stdout, DEBUG_TEXT_PUTS": Using \"%s\" from configuration file\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": Using \"%s\" from configuration file\n", str);
         break;
       case 1:
-        fprintf(stdout, DEBUG_TEXT_PUTS": Using user arguments for configurations\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": Using user arguments for configurations\n", str);
         break;
     }
   }
@@ -485,21 +501,30 @@ void getImgPath(char str[][PATH_MAX], int choice) {
   DIR *d;
   struct dirent *dir;
 
-  d = opendir(*str);
+  d = opendir(str);
+
   int temp = 0;
-  if (d) {
-    bool notEndingWithSlash;
-    if(*str[strlen(*str)] != '/') /* Check to see if path is not ending with '/' */
-      notEndingWithSlash = true;
-    while ((dir = readdir(d)) != NULL) {
+
+  if(d) {
+
+    /* Check if this str path ends with '/' */
+    size_t str_len = strlen(str);
+    if(str[str_len - 1 ] != '/') {
+      if(str_len < PATH_MAX)
+        str[str_len] = '/';
+      else {
+        fprintf(stderr, ERR_TEXT_PUTS"Error: Animation path is too big and exceedes system's maximum path length: %d characters long\n", PATH_MAX);
+      }
+    }
+
+    while((dir = readdir(d)) != NULL) {
       (imgPath)[temp] = (char*)malloc(PATH_MAX * sizeof(char));
-      strcpy((imgPath)[temp], *str);
-      if(notEndingWithSlash) /* Add "/" to frame path if the dir path doesn't end with "/" */
-        strcat((imgPath)[temp], "/");
+      strcpy((imgPath)[temp], str);
       strcat((imgPath)[temp++], dir->d_name);
     }
     closedir(d);
   }
+
     /* readdir() dumps mixed files, so qsort will sort alphabetically */
     qsort(imgPath, imgCount, sizeof((imgPath)[0]), compare_fun);
 
@@ -514,23 +539,23 @@ void getImgPath(char str[][PATH_MAX], int choice) {
     /* Now check if there are any "." and ".." files in path
      * in order to know where the actual images start     */
     char tempImgPath1dot[PATH_MAX];
-    strcpy(tempImgPath1dot, *str);
-    strcat(tempImgPath1dot, "/.");
+    strcpy(tempImgPath1dot, str);
+    strcat(tempImgPath1dot, ".");
     if(strcmp((imgPath)[0], tempImgPath1dot) == 0) {
       hasCurrentDir = true;
       if(_DEBUG)
-        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s/\" has current directory file, skipping it.\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s has current directory file, skipping it.\n", str);
     }
     else
       hasCurrentDir = false;
 
     char tempImgPath2dot[PATH_MAX];
-    strcpy(tempImgPath2dot, *str);
-    strcat(tempImgPath2dot, "/..");
+    strcpy(tempImgPath2dot, str);
+    strcat(tempImgPath2dot, "..");
     if(strcmp((imgPath)[1], tempImgPath2dot) == 0) {
       hasParentDir = true;
       if(_DEBUG)
-        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s/\" has parent directory file, skipping it.\n", *str);
+        fprintf(stdout, DEBUG_TEXT_PUTS": \"%s has parent directory file, skipping it.\n", str);
     }
     else
       hasParentDir = false;
