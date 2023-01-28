@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 TheRealOne78 <bajcsielias78@gmail.com>
+ * Copyright (C) 2023 TheRealOne78 <bajcsielias78@gmail.com>
  *
  * This file is part of the XAWP project
  *

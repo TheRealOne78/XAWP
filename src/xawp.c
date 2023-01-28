@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 TheRealOne78 <bajcsielias78@gmail.com>
+ * Copyright (C) 2023 TheRealOne78 <bajcsielias78@gmail.com>
  *
  * This file is part of the XAWP project
  *
@@ -415,7 +415,7 @@ void help(void) {
 void version(void) {
   printf("XAWP version %s" /* version number */                                           "\n"
                                                                                           "\n"
-         "Copyright (C) 2022 TheRealOne78"                                                "\n"
+         "Copyright (C) 2023 TheRealOne78"                                                "\n"
          "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.""\n"
          "This is free software: you are free to change and redistribute it."             "\n"
          "There is NO WARRANTY, to the extent permitted by law."                          "\n"
