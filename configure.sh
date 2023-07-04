@@ -138,7 +138,7 @@ $ERR For more info, see https://wiki.gentoo.org/wiki/Emerge and https://wiki.gen
     $PKG_MGR -Sy --noconfirm $DEPENDENCIES
   ## RedHat
   elif [ $PKG_MGR == "dnf" ]; then
-    $PKG_MGR install -y $DEPENDENCIES
+    $PKG_MGR install -y $RPM_DEPENDENCIES
   ## FreeBSD
   elif [ $PKG_MGR == "pkg" ]; then
     $PKG_MGR install -y $BSD_DEPENDENCIES
