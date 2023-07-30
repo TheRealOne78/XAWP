@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 RED="\e[31m"
 GREEN="\e[32m"
@@ -11,7 +11,7 @@ WARN="["$YELLOW"w"$ENDCOLOR"]"
 ERR="["$RED"e"$ENDCOLOR"]"
 
 # Check for root
-if [[ "$EUID" != 0 ]]; then
+if [ "$EUID" -ne 0 ]; then
   printf "$ERR Please run this script with super user permission!\n"
   exit $EUID
 fi
@@ -19,14 +19,14 @@ fi
 # Install Dependencies
 bash ./configure.sh
 EXIT_CODE=$?
-if [[ ! $EXIT_CODE -eq 0 ]]; then
+if [ $EXIT_CODE -ne 0 ]; then
   exit $EXIT_CODE;
 fi
 
 # Compile
 bash ./compile.sh
 EXIT_CODE=$?
-if [[ ! $EXIT_CODE -eq 0 ]]; then
+if [ $EXIT_CODE -ne 0 ]; then
   exit $EXIT_CODE
 fi
 
@@ -39,7 +39,7 @@ else
   make install
 fi
 EXIT_CODE=$?
-if [[ ! $EXIT_CODE -eq 0 ]]; then
+if [ $EXIT_CODE -ne 0 ]; then
   printf "$ERR Couldn't install! Please check if XAWP compiled successfully\n"
   exit $EXIT_CODE
 fi
@@ -53,7 +53,10 @@ else
   make clean
 fi
 EXIT_CODE=$?
-if [[ ! $EXIT_CODE -eq 0 ]]; then
-  printf "$ERR Couldn't clean up\n"
+if [ $EXIT_CODE -ne 0 ]; then
+  printf "$ERR Couldn't clean up!\n"
   exit $EXIT_CODE
 fi
+
+# Done
+printf "$INFO Done. Have a nice day!\n"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 RED="\e[31m"
 GREEN="\e[32m"
@@ -11,7 +11,7 @@ WARN="["$YELLOW"w"$ENDCOLOR"]"
 ERR="["$RED"e"$ENDCOLOR"]"
 
 # Check for root
-if [[ "$EUID" != 0 ]]; then
+if [ $EUID -ne 0 ]; then
   printf "$ERR Please run this script with super user permission!\n"
   exit 1
 fi
@@ -74,7 +74,7 @@ fi
 
 # Choosing the right package manager
 ## Linux distributions
-if [ $WILL_INSTALL == true ]; then
+if [ "$WILL_INSTALL" = "true" ]; then
   ### Debian
   if [ -x "$(command -v apt-get)" ]; then
     printf "$INFO apt-get package manager detected\n"
@@ -131,22 +131,22 @@ $ERR For more info, see https://wiki.gentoo.org/wiki/Emerge and https://wiki.gen
 
   # Install dependencies
   ## Debian
-  if [ $PKG_MGR == "apt-get" ]; then
+  if [ $PKG_MGR = "apt-get" ]; then
     $PKG_MGR install -y $DEB_DEPENDENCIES
   ## Arch
-  elif [ $PKG_MGR == "pacman" ]; then
+  elif [ $PKG_MGR = "pacman" ]; then
     $PKG_MGR -Sy --noconfirm $DEPENDENCIES
   ## RedHat
-  elif [ $PKG_MGR == "dnf" ]; then
+  elif [ $PKG_MGR = "dnf" ]; then
     $PKG_MGR install -y $RPM_DEPENDENCIES
   ## FreeBSD
-  elif [ $PKG_MGR == "pkg" ]; then
+  elif [ $PKG_MGR = "pkg" ]; then
     $PKG_MGR install -y $BSD_DEPENDENCIES
   ## OpenBSD
-  elif [ $PKG_MGR == "pkg_add" ]; then
+  elif [ $PKG_MGR = "pkg_add" ]; then
     $PKG_MGR $BSD_DEPENDENCIES
   ## NetBSD
-  elif [ $PKG_MGR == "pkgin" ]; then
+  elif [ $PKG_MGR = "pkgin" ]; then
     $PKG_MGR -y install $BSD_DEPENDENCIES
   fi
   if [ $? -eq 0 ]; then

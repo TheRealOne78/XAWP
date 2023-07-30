@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 RED="\e[31m"
 GREEN="\e[32m"
@@ -21,7 +21,7 @@ else
 fi
 EXIT_CODE=$?
 
-if [[ $EXIT_CODE -eq 0 ]]; then
+if [ $EXIT_CODE -eq 0 ]; then
   printf "\n"$INFO" Compiling successful!\n"
   exit $EXIT_CODE
 
