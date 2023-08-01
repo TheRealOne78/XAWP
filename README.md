@@ -2,7 +2,17 @@
   <img src="./icons/logo_gradient_v2.svg" width="50%">
 </p>
 
-# X11 Animated Wallpaper Player 
+# X11 Animated Wallpaper Player - **DEPRECATED**
+
+## Deprecation announcement
+
+Because the project advanced a little and so the visions did, XAWP will be merged into [OAWP](https://github.com/OAWP/OAWP.git). This is because OAWP visions X11, Wayland, macOS and Windows support, so making separate basecodes would be burdensome, and continuing this project would make transitioning to OAWP even harder.
+
+The XAWP project will still continue under the [Open Animated Wallpaper Player](https://github.com/OAWP/OAWP.git) (OAWP) with the XAWP codename, along with WAWP, WinAWP and MAWP.
+
+The new repository is available at [https://github.com/OAWP/OAWP.git](https://github.com/OAWP/OAWP.git).
+
+## X11 Animated Wallpaper Player
 
 X11 Animated Wallpaper Player - An X11 animated wallpaper player made to be easily configurable, be fast and work in compositors
 
