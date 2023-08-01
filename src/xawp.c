@@ -200,7 +200,6 @@ int main(int argc, char *argv[]) {
   puts_logo();
 
   config_t cfg;
-  config_setting_t *setting;
   const char *cfgStaticWallpaper;
   const char *cfgPath;
   double cfgTime;
